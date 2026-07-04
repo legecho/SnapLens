@@ -26,10 +26,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupPopover() {
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 320, height: 240)
+        popover.contentSize = NSSize(width: 300, height: 200)
         popover.behavior = .transient
         popover.animates = true
-        popover.contentViewController = NSHostingController(rootView: PopoverView())
+        popover.contentViewController = NSHostingController(rootView: MenuBarView())
     }
 
     @objc func togglePopover() {
@@ -44,38 +44,4 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-struct PopoverView: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "translate")
-                .font(.system(size: 40))
-                .foregroundColor(.accentColor)
 
-            Text("ImageTranslator")
-                .font(.headline)
-
-            Text("Select a region to translate")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-
-            Spacer()
-
-            HStack {
-                Button("Settings") {
-                    // TODO: Open settings
-                }
-                .keyboardShortcut(",", modifiers: .command)
-
-                Spacer()
-
-                Button("Quit") {
-                    NSApplication.shared.terminate(nil)
-                }
-                .keyboardShortcut("q", modifiers: .command)
-            }
-            .padding(.horizontal)
-        }
-        .padding(20)
-        .frame(width: 320, height: 240)
-    }
-}

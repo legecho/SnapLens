@@ -1,0 +1,86 @@
+import SwiftUI
+
+struct ScreenCaptureView: View {
+    let fullImage: CGImage
+    let onRegionSelected: (CGRect) -> Void
+    let onCancel: () -> Void
+    
+    @State private var dragStart: CGPoint?
+    @State private var dragEnd: CGPoint?
+    
+    private var selectionRect: CGRect? {
+        guard let start = dragStart, let end = dragEnd else { return nil }
+        let x = min(start.x, end.x)
+        let y = min(start.y, end.y)
+        let width = abs(end.x - start.x)
+        let height = abs(end.y - start.y)
+        guard width > 10, height > 10 else { return nil }
+        return CGRect(x: x, y: y, width: width, height: height)
+    }
+    
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                // 显示截屏图片
+                Image(nsImage: NSImage(cgImage: fullImage, size: NSSize(width: fullImage.width, height: fullImage.height)))
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                
+                // 选区框
+                if let rect = selectionRect {
+                    Rectangle()
+                        .stroke(Color.blue, lineWidth: 2)
+                        .frame(width: rect.width, height: rect.height)
+                        .position(x: rect.midX, y: rect.midY)
+                    
+                    Rectangle()
+                        .fill(Color.blue.opacity(0.15))
+                        .frame(width: rect.width, height: rect.height)
+                        .position(x: rect.midX, y: rect.midY)
+                }
+                
+                // 提示文字
+                VStack {
+                    Spacer()
+                    Text("在截图上框选要翻译的区域，按 ESC 取消")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.black.opacity(0.7))
+                        .cornerRadius(8)
+                        .padding(.bottom, 20)
+                }
+            }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        dragStart = dragStart ?? value.location
+                        dragEnd = value.location
+                    }
+                    .onEnded { value in
+                        guard let rect = selectionRect else { return }
+                        
+                        // 将视图坐标转换回全屏坐标
+                        let imageScale = CGFloat(fullImage.width) / geometry.size.width
+                        let scaledRect = CGRect(
+                            x: rect.origin.x * imageScale,
+                            y: rect.origin.y * imageScale,
+                            width: rect.width * imageScale,
+                            height: rect.height * imageScale
+                        )
+                        print("[DEBUG] ScreenCaptureView: selected \(rect) → scaled \(scaledRect)")
+                        onRegionSelected(scaledRect)
+                    }
+            )
+            .onAppear {
+                NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                    if event.keyCode == 53 { onCancel(); return nil }
+                    return event
+                }
+            }
+        }
+    }
+}

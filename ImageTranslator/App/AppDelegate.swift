@@ -5,20 +5,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
     private var settingsWindow: NSWindow?
-    private var isInitialized = false
+    private var captureWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
         setupPopover()
         
-        // Delay hotkey registration to ensure app is fully initialized
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             HotKeyManager.shared.register()
-            self.isInitialized = true
             print("[DEBUG] App initialized, hotkey registered")
         }
         
-        // Listen for hotkey and show popover
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleHotKey),
@@ -32,20 +29,75 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func handleHotKey() {
-        print("[DEBUG] Hotkey received, starting capture")
-        
-        // 使用和按钮点击相同的流程：显示覆盖层 → 选区 → 截图
-        ScreenCaptureManager.shared.startCapture { [weak self] result in
-            switch result {
-            case .success(let image):
-                print("[DEBUG] Capture success, processing...")
-                self?.processCapturedImage(image)
-            case .failure(let error):
-                print("[DEBUG] Capture failed: \(error)")
-            }
-        }
+        print("[DEBUG] Hotkey received")
+        startCapture()
     }
     
+    func startCapture() {
+        print("[DEBUG] Starting capture")
+        
+        // 1. 先截全屏
+        guard let fullImage = ScreenCaptureManager.shared.captureFullScreen() else {
+            print("[DEBUG] Failed to capture screen")
+            return
+        }
+        
+        // 2. 保存调试图片
+        ScreenCaptureManager.shared.saveDebugImage(fullImage, prefix: "fullscreen")
+        
+        // 3. 显示截图窗口让用户选区
+        showCaptureWindow(fullImage)
+    }
+    
+    private func showCaptureWindow(_ image: CGImage) {
+        let captureView = ScreenCaptureView(
+            fullImage: image,
+            onRegionSelected: { [weak self] rect in
+                self?.closeCaptureWindow()
+                self?.processRegion(image, rect: rect)
+            },
+            onCancel: { [weak self] in
+                self?.closeCaptureWindow()
+            }
+        )
+        
+        let window = NSWindow(
+            contentRect: NSScreen.main?.frame ?? .zero,
+            styleMask: .borderless,
+            backing: .buffered,
+            defer: false
+        )
+        window.level = .screenSaver
+        window.contentView = NSHostingView(rootView: captureView)
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.collectionBehavior = [.canJoinAllSpaces, .stationary]
+        window.makeKeyAndOrderFront(nil)
+        
+        captureWindow = window
+    }
+    
+    private func closeCaptureWindow() {
+        captureWindow?.orderOut(nil)
+        captureWindow = nil
+    }
+    
+    private func processRegion(_ fullImage: CGImage, rect: CGRect) {
+        print("[DEBUG] Processing region: \(rect)")
+        
+        // 裁剪选区
+        guard let cropped = fullImage.cropping(to: rect) else {
+            print("[DEBUG] Failed to crop")
+            return
+        }
+        
+        print("[DEBUG] Cropped: \(cropped.width)x\(cropped.height)")
+        ScreenCaptureManager.shared.saveDebugImage(cropped, prefix: "cropped")
+        
+        // OCR + 翻译
+        processCapturedImage(cropped)
+    }
+
     private func processCapturedImage(_ image: CGImage) {
         let ocrProvider = VisionOCR()
         let renderer = TranslationRenderer()
@@ -63,8 +115,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 
                 if let rendered = renderer.render(originalImage: image, textBlocks: textBlocks, translations: translations) {
                     let nsImage = NSImage(cgImage: rendered, size: NSSize(width: rendered.width, height: rendered.height))
-                    
-                    // Show popover with result
                     await MainActor.run {
                         self.showResultPopover(image: nsImage)
                     }
@@ -76,7 +126,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func showResultPopover(image: NSImage) {
-        // Create a result view
         let resultView = TranslationResultView(image: image)
         popover.contentViewController = NSHostingController(rootView: resultView)
         showPopover()
@@ -146,5 +195,3 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 extension Notification.Name {
     static let hotKeyTriggered = Notification.Name("hotKeyTriggered")
 }
-
-

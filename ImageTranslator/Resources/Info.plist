@@ -26,6 +26,8 @@
 	<false/>
 	<key>LSUIElement</key>
 	<true/>
+	<key>LSApplicationCategory</key>
+	<string>public.app-category.utilities</string>
 	<key>NSMainStoryboardFile</key>
 	<string></string>
 	<key>Privacy - Screen Capture Usage Description</key>

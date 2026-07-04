@@ -89,20 +89,22 @@ final class ScreenCaptureManager {
         let targetDisplay = displayContainingPoint(midPoint)
 
         guard let image = CGDisplayCreateImage(targetDisplay) else {
+            let completion = captureCompletion
             cleanup()
-            captureCompletion?(.failure(.captureFailed))
+            completion?(.failure(.captureFailed))
             return
         }
 
         let croppedImage = image.cropping(to: rect)
+        let completion = captureCompletion
         cleanup()
 
         guard let cropped = croppedImage else {
-            captureCompletion?(.failure(.captureFailed))
+            completion?(.failure(.captureFailed))
             return
         }
 
-        captureCompletion?(.success(cropped))
+        completion?(.success(cropped))
     }
 
     private func displayContainingPoint(_ point: CGPoint) -> CGDirectDisplayID {

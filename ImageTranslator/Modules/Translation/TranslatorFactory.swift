@@ -7,14 +7,14 @@ enum TranslationEngine: String, CaseIterable {
 }
 
 class TranslatorFactory {
-    static func create(engine: TranslationEngine, apiKey: String?) -> TranslationProvider {
+    static func create(engine: TranslationEngine, apiKey: String?) throws -> TranslationProvider {
         switch engine {
         case .google:
             return GoogleTranslator(apiKey: apiKey ?? "")
         case .deepl:
-            fatalError("DeepL not yet implemented")
+            throw TranslationError.engineNotAvailable("DeepL not yet implemented")
         case .localAI:
-            fatalError("Local AI not yet implemented")
+            throw TranslationError.engineNotAvailable("Local AI not yet implemented")
         }
     }
 }

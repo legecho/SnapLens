@@ -5,6 +5,7 @@ enum TranslationError: Error {
     case rateLimitExceeded
     case networkError
     case apiKeyMissing
+    case engineNotAvailable(String)
 }
 
 protocol TranslationProvider {

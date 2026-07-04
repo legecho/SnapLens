@@ -93,6 +93,16 @@ final class ScreenCaptureManager {
 
                 let fullImage = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
                 print("[DEBUG] full screen: \(fullImage.width)x\(fullImage.height)")
+                
+                // 保存全屏截图用于调试
+                let debugURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("debug_fullscreen_\(Int(Date().timeIntervalSince1970)).png")
+                let nsImage = NSImage(cgImage: fullImage, size: NSSize(width: fullImage.width, height: fullImage.height))
+                if let tiffData = nsImage.tiffRepresentation,
+                   let bitmap = NSBitmapImageRep(data: tiffData),
+                   let pngData = bitmap.representation(using: .png, properties: [:]) {
+                    try? pngData.write(to: debugURL)
+                    print("[DEBUG] Full screen saved to: \(debugURL.path)")
+                }
 
                 // 手动裁剪选区
                 // ScreenCaptureKit 使用 Core Graphics 坐标系（左下角为原点），需要翻转 Y

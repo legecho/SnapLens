@@ -107,7 +107,7 @@ struct MenuBarView: View {
             print("[DEBUG] translator: \(translator.name)")
             let translations = try await translator.translateBatch(
                 texts,
-                from: "auto",
+                from: "en",
                 to: configManager.targetLanguage
             )
             print("[DEBUG] translations: \(translations)")

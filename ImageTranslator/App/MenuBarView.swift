@@ -71,6 +71,7 @@ struct MenuBarView: View {
     }
 
     private func startTranslation() {
+        print("[DEBUG] startTranslation called")
         isTranslating = true
         lastError = nil
         translatedImage = nil
@@ -78,10 +79,12 @@ struct MenuBarView: View {
         screenCaptureManager.startCapture { result in
             switch result {
             case .success(let cgImage):
+                print("[DEBUG] capture success, processing...")
                 Task {
                     await processImage(cgImage)
                 }
             case .failure(let error):
+                print("[DEBUG] capture failed: \(error)")
                 DispatchQueue.main.async {
                     self.isTranslating = false
                     self.lastError = error.localizedDescription
@@ -93,18 +96,23 @@ struct MenuBarView: View {
     private func processImage(_ image: CGImage) async {
         print("[DEBUG] processImage: \(image.width)x\(image.height)")
         do {
+            print("[DEBUG] starting OCR...")
             let textBlocks = try await ocrProvider.recognize(image: image)
             print("[DEBUG] OCR found \(textBlocks.count) blocks")
             let texts = textBlocks.map { $0.text }
             print("[DEBUG] texts: \(texts)")
             
-            let translations = try await configManager.getTranslator().translateBatch(
+            print("[DEBUG] starting translation...")
+            let translator = configManager.getTranslator()
+            print("[DEBUG] translator: \(translator.name)")
+            let translations = try await translator.translateBatch(
                 texts,
                 from: "auto",
                 to: configManager.targetLanguage
             )
             print("[DEBUG] translations: \(translations)")
 
+            print("[DEBUG] rendering...")
             if let rendered = renderer.render(originalImage: image, textBlocks: textBlocks, translations: translations) {
                 print("[DEBUG] render success: \(rendered.width)x\(rendered.height)")
                 await MainActor.run {

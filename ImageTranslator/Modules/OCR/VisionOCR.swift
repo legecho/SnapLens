@@ -1,6 +1,7 @@
 import Foundation
 import Vision
 import CoreGraphics
+import AppKit
 
 final class VisionOCR: OCRProvider {
     private let recognitionLanguages: [String]

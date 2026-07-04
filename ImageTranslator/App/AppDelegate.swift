@@ -82,6 +82,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func processCapturedImage(_ image: CGImage) {
+        print("[DEBUG] processCapturedImage: \(image.width)x\(image.height)")
         let ocrProvider = VisionOCR()
         let renderer = TranslationRenderer()
         let config = ConfigManager.shared
@@ -89,17 +90,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         Task {
             do {
                 let textBlocks = try await ocrProvider.recognize(image: image)
+                print("[DEBUG] OCR found \(textBlocks.count) blocks")
                 let texts = textBlocks.map { $0.text }
+                print("[DEBUG] texts: \(texts)")
+                
                 let translations = try await config.getTranslator().translateBatch(
                     texts,
                     from: "auto",
                     to: config.targetLanguage
                 )
+                print("[DEBUG] translations: \(translations)")
+                
                 if let rendered = renderer.render(originalImage: image, textBlocks: textBlocks, translations: translations) {
+                    print("[DEBUG] render success")
                     let nsImage = NSImage(cgImage: rendered, size: NSSize(width: rendered.width, height: rendered.height))
                     await MainActor.run {
                         self.showResultPopover(image: nsImage)
                     }
+                } else {
+                    print("[DEBUG] render failed")
                 }
             } catch {
                 print("[DEBUG] Error: \(error)")

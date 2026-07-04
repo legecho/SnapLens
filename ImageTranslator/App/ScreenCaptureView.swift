@@ -20,35 +20,21 @@ struct ScreenCaptureView: View {
 
     var body: some View {
         GeometryReader { geometry in
+            let imageAspect = CGFloat(fullImage.width) / CGFloat(fullImage.height)
+            let viewAspect = geometry.size.width / geometry.size.height
+            let displayWidth = imageAspect > viewAspect ? geometry.size.width : geometry.size.height * imageAspect
+            let displayHeight = imageAspect > viewAspect ? geometry.size.width / imageAspect : geometry.size.height
+            let offsetX = (geometry.size.width - displayWidth) / 2
+            let offsetY = (geometry.size.height - displayHeight) / 2
+
             ZStack {
                 Color.black.ignoresSafeArea()
 
-                // 计算图片实际显示区域（考虑 aspectRatio fit）
-                let imageAspect = CGFloat(fullImage.width) / CGFloat(fullImage.height)
-                let viewAspect = geometry.size.width / geometry.size.height
-
-                let displayWidth: CGFloat
-                let displayHeight: CGFloat
-                if imageAspect > viewAspect {
-                    // 图片更宽，以宽度为准
-                    displayWidth = geometry.size.width
-                    displayHeight = geometry.size.width / imageAspect
-                } else {
-                    // 图片更高，以高度为准
-                    displayHeight = geometry.size.height
-                    displayWidth = geometry.size.height * imageAspect
-                }
-
-                let offsetX = (geometry.size.width - displayWidth) / 2
-                let offsetY = (geometry.size.height - displayHeight) / 2
-
-                // 显示截屏图片
                 Image(nsImage: NSImage(cgImage: fullImage, size: NSSize(width: fullImage.width, height: fullImage.height)))
                     .resizable()
                     .frame(width: displayWidth, height: displayHeight)
                     .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
 
-                // 选区框
                 if let rect = selectionRect {
                     Rectangle()
                         .stroke(Color.blue, lineWidth: 2)
@@ -61,7 +47,6 @@ struct ScreenCaptureView: View {
                         .position(x: rect.midX, y: rect.midY)
                 }
 
-                // 提示文字
                 VStack {
                     Spacer()
                     Text("在截图上框选要翻译的区域，按 ESC 取消")
@@ -84,7 +69,6 @@ struct ScreenCaptureView: View {
                     .onEnded { value in
                         guard let rect = selectionRect else { return }
 
-                        // 将视图坐标转换为图片像素坐标
                         let scaleX = CGFloat(fullImage.width) / displayWidth
                         let scaleY = CGFloat(fullImage.height) / displayHeight
 

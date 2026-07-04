@@ -1,37 +1,66 @@
 import SwiftUI
 
 struct MenuBarView: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "translate")
-                .font(.system(size: 40))
-                .foregroundColor(.accentColor)
+    @State private var isTranslating = false
+    @State private var lastError: String?
 
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
             Text("ImageTranslator")
                 .font(.headline)
 
-            Text("Select a region to translate")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+            Divider()
 
-            Spacer()
-
-            HStack {
-                Button("Settings") {
-                    // TODO: Open settings
-                }
-                .keyboardShortcut(",", modifiers: .command)
-
-                Spacer()
-
-                Button("Quit") {
-                    NSApplication.shared.terminate(nil)
-                }
-                .keyboardShortcut("q", modifiers: .command)
+            Button(action: startTranslation) {
+                Label("Start Translation", systemImage: "text.viewfinder")
             }
-            .padding(.horizontal)
+            .disabled(isTranslating)
+
+            Button(action: openSettings) {
+                Label("Settings", systemImage: "gear")
+            }
+
+            Button(action: quitApp) {
+                Label("Quit", systemImage: "power")
+            }
+
+            if isTranslating {
+                HStack {
+                    ProgressView()
+                        .scaleEffect(0.5)
+                    Text("Translating...")
+                        .font(.caption)
+                }
+            }
+
+            if let error = lastError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
         }
-        .padding(20)
+        .padding()
         .frame(width: 300, height: 200)
     }
+
+    private func startTranslation() {
+        isTranslating = true
+        lastError = nil
+        // TODO: Implement actual translation logic
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            isTranslating = false
+        }
+    }
+
+    private func openSettings() {
+        // TODO: implement
+    }
+
+    private func quitApp() {
+        NSApplication.shared.terminate(nil)
+    }
+}
+
+#Preview {
+    MenuBarView()
 }

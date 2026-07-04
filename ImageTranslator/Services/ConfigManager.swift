@@ -66,9 +66,13 @@ final class ConfigManager: ObservableObject {
 
     func getTranslator() -> TranslationProvider {
         do {
-            return try TranslatorFactory.create(engine: translationEngine, apiKey: googleAPIKey)
+            if #available(macOS 26.0, *) {
+                return try TranslatorFactory.create(engine: translationEngine, apiKey: googleAPIKey)
+            } else {
+                return MockTranslator()
+            }
         } catch {
-            return GoogleTranslator(apiKey: googleAPIKey ?? "")
+            return MockTranslator()
         }
     }
 }

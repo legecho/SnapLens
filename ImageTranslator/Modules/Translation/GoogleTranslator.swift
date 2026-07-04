@@ -14,24 +14,19 @@ final class GoogleTranslator: TranslationProvider {
             throw TranslationError.apiKeyMissing
         }
 
-        guard var urlComponents = URLComponents(string: baseURL) else {
-            throw TranslationError.invalidResponse
-        }
-
-        urlComponents.queryItems = [
-            URLQueryItem(name: "key", value: apiKey),
-            URLQueryItem(name: "q", value: text),
-            URLQueryItem(name: "source", value: sourceLang),
-            URLQueryItem(name: "target", value: targetLang),
-            URLQueryItem(name: "format", value: "text")
-        ]
-
-        guard let url = urlComponents.url else {
+        guard let url = URL(string: baseURL) else {
             throw TranslationError.invalidResponse
         }
 
         var request = URLRequest(url: url)
-        request.httpMethod = "GET"
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+
+        let encodedText = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? text
+        let encodedSource = sourceLang.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? sourceLang
+        let encodedTarget = targetLang.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? targetLang
+        let body = "key=\(apiKey)&q=\(encodedText)&source=\(encodedSource)&target=\(encodedTarget)&format=text"
+        request.httpBody = body.data(using: .utf8)
 
         let data: Data
         let response: URLResponse

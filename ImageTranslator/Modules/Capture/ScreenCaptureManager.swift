@@ -71,14 +71,22 @@ final class ScreenCaptureManager {
     }
 
     private func captureRegion(_ rect: CGRect) {
-        print("[DEBUG] captureRegion rect: \(rect)")
+        print("[DEBUG] captureRegion rect (points): \(rect)")
+        
+        // Retina: CGDisplayCreateImage 返回像素，rect 是点坐标，需要乘以 scale
+        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        let scaledRect = CGRect(
+            x: rect.origin.x * scale,
+            y: rect.origin.y * scale,
+            width: rect.width * scale,
+            height: rect.height * scale
+        )
+        print("[DEBUG] scaled rect (pixels): \(scaledRect), scale: \(scale)")
         
         let midPoint = CGPoint(x: rect.midX, y: rect.midY)
         let targetDisplay = displayContainingPoint(midPoint)
-        print("[DEBUG] target display: \(targetDisplay)")
 
         guard let image = CGDisplayCreateImage(targetDisplay) else {
-            print("[DEBUG] CGDisplayCreateImage failed")
             cleanup()
             captureCompletion?(.failure(.captureFailed))
             return
@@ -86,17 +94,15 @@ final class ScreenCaptureManager {
         
         print("[DEBUG] full image: \(image.width)x\(image.height)")
 
-        let croppedImage = image.cropping(to: rect)
-        print("[DEBUG] cropped: \(croppedImage?.width ?? 0)x\(croppedImage?.height ?? 0)")
-        
+        let croppedImage = image.cropping(to: scaledRect)
         cleanup()
 
         guard let cropped = croppedImage else {
-            print("[DEBUG] crop failed")
             captureCompletion?(.failure(.captureFailed))
             return
         }
 
+        print("[DEBUG] cropped: \(cropped.width)x\(cropped.height)")
         captureCompletion?(.success(cropped))
     }
 

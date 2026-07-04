@@ -36,14 +36,8 @@ final class ScreenCaptureManager {
     func startCapture(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
         print("[DEBUG] startCapture called")
         
-        // Check permission first
-        if !CGPreflightScreenCaptureAccess() {
-            print("[DEBUG] permission not granted, requesting...")
-            // Don't request - just inform user
-            completion(.failure(.permissionDenied))
-            return
-        }
-        
+        // Don't check permission - just try to capture
+        // If permission is denied, CGDisplayCreateImage will return nil
         DispatchQueue.main.async {
             print("[DEBUG] showing overlay")
             self.showOverlay(completion: completion)

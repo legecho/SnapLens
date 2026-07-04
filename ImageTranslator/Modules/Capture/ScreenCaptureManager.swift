@@ -36,7 +36,7 @@ final class ScreenCaptureManager {
     func startCapture(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
         print("[DEBUG] startCapture called")
         DispatchQueue.main.async {
-            print("[DEBUG] showing overlay directly (skipping permission check)")
+            print("[DEBUG] showing overlay")
             self.showOverlay(completion: completion)
         }
     }
@@ -49,8 +49,9 @@ final class ScreenCaptureManager {
                 self?.captureRegion(rect)
             },
             onCancel: { [weak self] in
+                let completion = self?.captureCompletion
                 self?.cleanup()
-                self?.captureCompletion?(.failure(.invalidRegion))
+                completion?(.failure(.invalidRegion))
             }
         )
 
@@ -72,64 +73,6 @@ final class ScreenCaptureManager {
 
         overlayWindow = window
     }
-    }
-}
-
-final class ScreenCaptureManager {
-    static let shared = ScreenCaptureManager()
-
-    private var overlayWindow: NSWindow?
-    private var captureCompletion: ((Result<CGImage, CaptureError>) -> Void)?
-    private init() {}
-
-    func startCapture(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
-        print("[DEBUG] startCapture called")
-        DispatchQueue.main.async {
-            print("[DEBUG] showing overlay directly (skipping permission check)")
-            self.showOverlay(completion: completion)
-        }
-    }
-
-    private func checkPermission(completion: @escaping (Bool) -> Void) {
-        if CGPreflightScreenCaptureAccess() {
-            completion(true)
-        } else {
-            CGRequestScreenCaptureAccess()
-            completion(false)
-        }
-    }
-
-    private func showOverlay(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
-        captureCompletion = completion
-
-        let overlayView = CaptureOverlayView(
-            onSelectionComplete: { [weak self] rect in
-                self?.captureRegion(rect)
-            },
-            onCancel: { [weak self] in
-                self?.cleanup()
-                self?.captureCompletion?(.failure(.invalidRegion))
-            }
-        )
-
-        let hostingController = NSHostingController(rootView: overlayView)
-        hostingController.view.wantsLayer = true
-        hostingController.view.layer?.backgroundColor = NSColor.clear.cgColor
-
-        let window = NSWindow(
-            contentRect: NSScreen.main?.frame ?? .zero,
-            styleMask: .borderless,
-            backing: .buffered,
-            defer: false
-        )
-        window.level = .screenSaver
-        window.contentView = hostingController.view
-        window.isOpaque = false
-        window.backgroundColor = .clear
-        window.makeKeyAndOrderFront(nil)
-
-        overlayWindow = window
-    }
 
     private func captureRegion(_ rect: CGRect) {
         print("[DEBUG] captureRegion called with rect: \(rect)")
@@ -138,11 +81,10 @@ final class ScreenCaptureManager {
         print("[DEBUG] target display: \(targetDisplay)")
 
         guard let image = CGDisplayCreateImage(targetDisplay) else {
-            print("[DEBUG] failed to create display image - likely permission issue")
-            CGRequestScreenCaptureAccess()
+            print("[DEBUG] failed to create display image")
             let completion = captureCompletion
             cleanup()
-            completion?(.failure(.permissionDenied))
+            completion?(.failure(.captureFailed))
             return
         }
 

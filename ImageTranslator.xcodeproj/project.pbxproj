@@ -17,6 +17,9 @@
 		D1000003 /* GoogleTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000003; };
 		D1000004 /* TranslatorFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000004; };
 		D1000005 /* TranslationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000005; };
+		E1000001 /* ImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000001; };
+		E1000002 /* TranslationRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000002; };
+		E1000003 /* RendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000003; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,6 +45,9 @@
 		D2000003 /* GoogleTranslator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleTranslator.swift; sourceTree = "<group>"; };
 		D2000004 /* TranslatorFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorFactory.swift; sourceTree = "<group>"; };
 		D2000005 /* TranslationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationTests.swift; sourceTree = "<group>"; };
+		E2000001 /* ImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUtils.swift; sourceTree = "<group>"; };
+		E2000002 /* TranslationRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationRenderer.swift; sourceTree = "<group>"; };
+		E2000003 /* RendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RendererTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +83,7 @@
 				A2000001 /* ImageTranslatorApp.swift */,
 				A4000003 /* App */,
 				B4000001 /* Modules */,
+				E4000001 /* Utils */,
 				A4000004 /* Resources */,
 			);
 			path = ImageTranslator;
@@ -112,6 +119,7 @@
 			children = (
 				B4000002 /* OCR */,
 				B4000003 /* Translation */,
+				E4000002 /* Renderer */,
 			);
 			path = Modules;
 			sourceTree = "<group>";
@@ -135,11 +143,28 @@
 			path = Translation;
 			sourceTree = "<group>";
 		};
+		E4000001 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				E2000001 /* ImageUtils.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		E4000002 /* Renderer */ = {
+			isa = PBXGroup;
+			children = (
+				E2000002 /* TranslationRenderer.swift */,
+			);
+			path = Renderer;
+			sourceTree = "<group>";
+		};
 		C4000001 /* ImageTranslatorTests */ = {
 			isa = PBXGroup;
 			children = (
 				B2000003 /* OCRTests.swift */,
 				D2000005 /* TranslationTests.swift */,
+				E2000003 /* RendererTests.swift */,
 			);
 			path = ImageTranslatorTests;
 			sourceTree = "<group>";
@@ -250,6 +275,8 @@
 				D1000002 /* TranslationProvider.swift in Sources */,
 				D1000003 /* GoogleTranslator.swift in Sources */,
 				D1000004 /* TranslatorFactory.swift in Sources */,
+				E1000001 /* ImageUtils.swift in Sources */,
+				E1000002 /* TranslationRenderer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -259,6 +286,7 @@
 			files = (
 				B1000003 /* OCRTests.swift in Sources */,
 				D1000005 /* TranslationTests.swift in Sources */,
+				E1000003 /* RendererTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

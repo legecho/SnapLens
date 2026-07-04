@@ -87,35 +87,51 @@ final class ScreenCaptureManager {
         
         // Small delay to ensure overlay is gone
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            // Capture full screen
-            guard let displayID = CGMainDisplayID().description.isEmpty ? nil : CGMainDisplayID(),
-                  let fullImage = CGDisplayCreateImage(displayID) else {
-                print("[DEBUG] failed to capture display")
-                completion?(.failure(.captureFailed))
-                return
-            }
-            
-            print("[DEBUG] full screen captured: \(fullImage.width)x\(fullImage.height)")
-            
             // Convert rect from SwiftUI (top-left origin) to CG (bottom-left origin)
-            let screenHeight = CGFloat(fullImage.height)
-            let cropRect = CGRect(
-                x: rect.origin.x * 2,  // Retina 2x
-                y: screenHeight - (rect.origin.y + rect.height) * 2,
-                width: rect.width * 2,
-                height: rect.height * 2
+            let screenHeight = NSScreen.main!.frame.height
+            let cgRect = CGRect(
+                x: rect.origin.x,
+                y: screenHeight - rect.origin.y - rect.height,
+                width: rect.width,
+                height: rect.height
             )
-            print("[DEBUG] cropRect: \(cropRect)")
+            print("[DEBUG] cgRect: \(cgRect)")
             
-            // Crop the image
-            guard let croppedImage = fullImage.cropping(to: cropRect) else {
-                print("[DEBUG] failed to crop")
-                completion?(.failure(.captureFailed))
+            // Capture using CGWindowListCreateImage to get frontmost windows
+            // .optionOnScreenOnly captures only on-screen windows
+            // .excludingOffscreenWindows excludes offscreen windows
+            guard let image = CGWindowListCreateImage(
+                cgRect,
+                .optionOnScreenAboveMenuBar,
+                kCGNullWindowID,
+                [.boundsIgnoreFraming, .nominalResolution, .bestResolution]
+            ) else {
+                print("[DEBUG] failed to capture with CGWindowListCreateImage")
+                // Fallback to CGDisplayCreateImage
+                guard let displayImage = CGDisplayCreateImage(CGMainDisplayID()) else {
+                    print("[DEBUG] fallback also failed")
+                    completion?(.failure(.captureFailed))
+                    return
+                }
+                // Crop the fallback image
+                let cropScale = CGFloat(displayImage.width) / NSScreen.main!.frame.width
+                let fallbackCrop = CGRect(
+                    x: rect.origin.x * cropScale,
+                    y: (screenHeight - rect.origin.y - rect.height) * cropScale,
+                    width: rect.width * cropScale,
+                    height: rect.height * cropScale
+                )
+                if let cropped = displayImage.cropping(to: fallbackCrop) {
+                    print("[DEBUG] fallback capture success, size: \(cropped.width)x\(cropped.height)")
+                    completion?(.success(cropped))
+                } else {
+                    completion?(.failure(.captureFailed))
+                }
                 return
             }
             
-            print("[DEBUG] capture success, size: \(croppedImage.width)x\(croppedImage.height)")
-            completion?(.success(croppedImage))
+            print("[DEBUG] capture success, size: \(image.width)x\(image.height)")
+            completion?(.success(image))
         }
     }
 

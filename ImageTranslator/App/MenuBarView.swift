@@ -91,27 +91,35 @@ struct MenuBarView: View {
     }
 
     private func processImage(_ image: CGImage) async {
+        print("[DEBUG] processImage: \(image.width)x\(image.height)")
         do {
             let textBlocks = try await ocrProvider.recognize(image: image)
+            print("[DEBUG] OCR found \(textBlocks.count) blocks")
             let texts = textBlocks.map { $0.text }
+            print("[DEBUG] texts: \(texts)")
+            
             let translations = try await configManager.getTranslator().translateBatch(
                 texts,
                 from: "auto",
                 to: configManager.targetLanguage
             )
+            print("[DEBUG] translations: \(translations)")
 
             if let rendered = renderer.render(originalImage: image, textBlocks: textBlocks, translations: translations) {
+                print("[DEBUG] render success: \(rendered.width)x\(rendered.height)")
                 await MainActor.run {
                     self.translatedImage = NSImage(cgImage: rendered, size: NSSize(width: rendered.width, height: rendered.height))
                     self.isTranslating = false
                 }
             } else {
+                print("[DEBUG] render failed")
                 await MainActor.run {
                     self.isTranslating = false
                     self.lastError = "Failed to render translation."
                 }
             }
         } catch {
+            print("[DEBUG] error: \(error)")
             await MainActor.run {
                 self.isTranslating = false
                 self.lastError = error.localizedDescription

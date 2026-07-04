@@ -53,7 +53,9 @@ struct CaptureOverlayView: View {
                         dragEnd = value.location
                     }
                     .onEnded { value in
+                        print("[DEBUG] drag ended, selectionRect: \(selectionRect.debugDescription)")
                         guard let rect = selectionRect, rect.width > 10, rect.height > 10 else {
+                            print("[DEBUG] selection too small or nil, resetting")
                             resetSelection()
                             return
                         }
@@ -64,6 +66,7 @@ struct CaptureOverlayView: View {
                             width: rect.width,
                             height: rect.height
                         )
+                        print("[DEBUG] calling onSelectionComplete with flippedRect: \(flippedRect)")
                         onSelectionComplete(flippedRect)
                     }
             )

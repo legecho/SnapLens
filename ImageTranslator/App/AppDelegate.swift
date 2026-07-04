@@ -34,7 +34,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func handleHotKey() {
         print("[DEBUG] Hotkey received, starting capture")
         
-        // Start capture directly - permission check happens during capture
+        // 使用和按钮点击相同的流程：显示覆盖层 → 选区 → 截图
         ScreenCaptureManager.shared.startCapture { [weak self] result in
             switch result {
             case .success(let image):

@@ -98,11 +98,9 @@ final class ScreenCaptureManager {
             print("[DEBUG] cgRect: \(cgRect)")
             
             // Capture using CGWindowListCreateImage to get frontmost windows
-            // .optionOnScreenOnly captures only on-screen windows
-            // .excludingOffscreenWindows excludes offscreen windows
             guard let image = CGWindowListCreateImage(
                 cgRect,
-                .optionOnScreenAboveMenuBar,
+                .optionOnScreenOnly,
                 kCGNullWindowID,
                 [.boundsIgnoreFraming, .nominalResolution, .bestResolution]
             ) else {

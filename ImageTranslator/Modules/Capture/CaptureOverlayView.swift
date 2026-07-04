@@ -58,13 +58,8 @@ struct CaptureOverlayView: View {
                             return
                         }
 
-                        let flippedRect = CGRect(
-                            x: rect.origin.x,
-                            y: geometry.size.height - rect.origin.y - rect.height,
-                            width: rect.width,
-                            height: rect.height
-                        )
-                        onSelectionComplete(flippedRect)
+                        // CGDisplayCreateImage 和 SwiftUI 都是 (0,0) 在左上角，不需要翻转
+                        onSelectionComplete(rect)
                     }
             )
             .onAppear {

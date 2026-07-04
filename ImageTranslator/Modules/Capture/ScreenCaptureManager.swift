@@ -88,18 +88,31 @@ final class ScreenCaptureManager {
             return
         }
 
-        // Retina: CGDisplayCreateImage returns pixels, but rect is in points
-        // Scale rect to match pixel coordinates
-        let scale = CGFloat(image.width) / NSScreen.main!.frame.width
-        let scaledRect = CGRect(
-            x: rect.origin.x * scale,
-            y: rect.origin.y * scale,
-            width: rect.width * scale,
-            height: rect.height * scale
+        // Get display bounds to calculate correct crop coordinates
+        let displayBounds = CGDisplayBounds(targetDisplay)
+        print("[DEBUG] display bounds: \(displayBounds)")
+        
+        // Convert screen coordinates to display coordinates
+        // The overlay window covers the full screen, but display might have different origin
+        let displayFrame = NSScreen.screens.first(where: { 
+            ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID) == targetDisplay 
+        })?.frame ?? NSScreen.main!.frame
+        print("[DEBUG] display frame: \(displayFrame)")
+        
+        // Scale factor between points and pixels
+        let scaleX = CGFloat(image.width) / displayFrame.width
+        let scaleY = CGFloat(image.height) / displayFrame.height
+        
+        // Convert rect from screen coordinates to display pixel coordinates
+        let cropRect = CGRect(
+            x: (rect.origin.x - displayFrame.origin.x) * scaleX,
+            y: (displayFrame.height - rect.origin.y + displayFrame.origin.y - rect.height) * scaleY,
+            width: rect.width * scaleX,
+            height: rect.height * scaleY
         )
-        print("[DEBUG] original rect: \(rect), scaled rect: \(scaledRect), scale: \(scale)")
+        print("[DEBUG] cropRect: \(cropRect)")
 
-        let croppedImage = image.cropping(to: scaledRect)
+        let croppedImage = image.cropping(to: cropRect)
         let completion = captureCompletion
         cleanup()
 

@@ -52,7 +52,7 @@ final class ConfigManager: ObservableObject {
 
     private init() {
         let savedEngine = defaults.string(forKey: Keys.translationEngine)
-        self.translationEngine = savedEngine.flatMap { TranslationEngine(rawValue: $0) } ?? .apple
+        self.translationEngine = savedEngine.flatMap { TranslationEngine(rawValue: $0) } ?? .mock
         self.targetLanguage = defaults.string(forKey: Keys.targetLanguage) ?? "zh-CN"
         self.autoTranslate = defaults.object(forKey: Keys.autoTranslate) as? Bool ?? true
         self.googleAPIKey = defaults.string(forKey: Keys.googleAPIKey)

@@ -4,26 +4,25 @@ import Translation
 @available(macOS 13.0, *)
 final class AppleTranslator: TranslationProvider {
     let name = "Apple"
-    
+
     func translate(_ text: String, from sourceLang: String, to targetLang: String) async throws -> String {
-        let source = languageCode(for: sourceLang)
-        let target = languageCode(for: targetLang)
-        
-        let session = LTTranslator(session: .init(source: source, target: target))
-        
+        let source = Locale.Language(identifier: mapLanguageCode(sourceLang))
+        let target = Locale.Language(identifier: mapLanguageCode(targetLang))
+
+        let session = TranslationSession(source: source, target: target)
+
         return try await withCheckedThrowingContinuation { continuation in
-            let request = LTranslationRequest(source: text)
-            session.translate(request) { result in
+            session.translate(text) { result in
                 switch result {
                 case .success(let response):
-                    continuation.resume(returning: response.targetText)
+                    continuation.resume(returning: response.targetString)
                 case .failure(let error):
                     continuation.resume(throwing: error)
                 }
             }
         }
     }
-    
+
     func translateBatch(_ texts: [String], from sourceLang: String, to targetLang: String) async throws -> [String] {
         var results: [String] = []
         for text in texts {
@@ -32,16 +31,16 @@ final class AppleTranslator: TranslationProvider {
         }
         return results
     }
-    
-    private func languageCode(for code: String) -> Language {
+
+    private func mapLanguageCode(_ code: String) -> String {
         switch code {
-        case "zh-CN", "zh-Hans": return .init(identifier: "zh-Hans")
-        case "zh-TW", "zh-Hant": return .init(identifier: "zh-Hant")
-        case "en": return .init(identifier: "en")
-        case "ja": return .init(identifier: "ja")
-        case "ko": return .init(identifier: "ko")
-        case "auto": return .init(identifier: "en")
-        default: return .init(identifier: code)
+        case "zh-CN", "zh-Hans": return "zh-Hans"
+        case "zh-TW", "zh-Hant": return "zh-Hant"
+        case "en": return "en"
+        case "ja": return "ja"
+        case "ko": return "ko"
+        case "auto": return "en"
+        default: return code
         }
     }
 }

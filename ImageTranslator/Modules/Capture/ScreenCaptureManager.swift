@@ -29,7 +29,9 @@ final class ScreenCaptureManager {
     private init() {}
 
     func startCapture(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
+        print("[DEBUG] startCapture called")
         checkPermission { [weak self] granted in
+            print("[DEBUG] permission granted: \(granted)")
             guard granted else {
                 DispatchQueue.main.async {
                     completion(.failure(.permissionDenied))
@@ -38,6 +40,7 @@ final class ScreenCaptureManager {
             }
 
             DispatchQueue.main.async {
+                print("[DEBUG] showing overlay")
                 self?.showOverlay(completion: completion)
             }
         }
@@ -85,10 +88,13 @@ final class ScreenCaptureManager {
     }
 
     private func captureRegion(_ rect: CGRect) {
+        print("[DEBUG] captureRegion called with rect: \(rect)")
         let midPoint = CGPoint(x: rect.midX, y: rect.midY)
         let targetDisplay = displayContainingPoint(midPoint)
+        print("[DEBUG] target display: \(targetDisplay)")
 
         guard let image = CGDisplayCreateImage(targetDisplay) else {
+            print("[DEBUG] failed to create display image")
             let completion = captureCompletion
             cleanup()
             completion?(.failure(.captureFailed))
@@ -100,10 +106,12 @@ final class ScreenCaptureManager {
         cleanup()
 
         guard let cropped = croppedImage else {
+            print("[DEBUG] failed to crop image")
             completion?(.failure(.captureFailed))
             return
         }
 
+        print("[DEBUG] capture success, size: \(cropped.width)x\(cropped.height)")
         completion?(.success(cropped))
     }
 

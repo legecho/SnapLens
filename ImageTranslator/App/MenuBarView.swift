@@ -71,17 +71,21 @@ struct MenuBarView: View {
     }
 
     private func startTranslation() {
+        print("[DEBUG] startTranslation called")
         isTranslating = true
         lastError = nil
         translatedImage = nil
 
         screenCaptureManager.startCapture { result in
+            print("[DEBUG] capture result received: \(result)")
             switch result {
             case .success(let cgImage):
+                print("[DEBUG] capture success, size: \(cgImage.width)x\(cgImage.height)")
                 Task {
                     await self.processImage(cgImage)
                 }
             case .failure(let error):
+                print("[DEBUG] capture failed: \(error)")
                 DispatchQueue.main.async {
                     self.isTranslating = false
                     self.lastError = error.localizedDescription
@@ -91,27 +95,38 @@ struct MenuBarView: View {
     }
 
     private func processImage(_ image: CGImage) async {
+        print("[DEBUG] processImage called, size: \(image.width)x\(image.height)")
         do {
+            print("[DEBUG] starting OCR...")
             let textBlocks = try await ocrProvider.recognize(image: image)
+            print("[DEBUG] OCR found \(textBlocks.count) text blocks")
             let texts = textBlocks.map { $0.text }
+            print("[DEBUG] texts: \(texts)")
+            
+            print("[DEBUG] starting translation...")
             let translations = try await configManager.getTranslator().translateBatch(
                 texts,
                 from: "auto",
                 to: configManager.targetLanguage
             )
+            print("[DEBUG] translations: \(translations)")
 
+            print("[DEBUG] rendering...")
             if let rendered = renderer.render(originalImage: image, textBlocks: textBlocks, translations: translations) {
+                print("[DEBUG] render success, size: \(rendered.width)x\(rendered.height)")
                 await MainActor.run {
                     self.translatedImage = NSImage(cgImage: rendered, size: NSSize(width: rendered.width, height: rendered.height))
                     self.isTranslating = false
                 }
             } else {
+                print("[DEBUG] render failed")
                 await MainActor.run {
                     self.isTranslating = false
                     self.lastError = "Failed to render translation."
                 }
             }
         } catch {
+            print("[DEBUG] error: \(error)")
             await MainActor.run {
                 self.isTranslating = false
                 self.lastError = error.localizedDescription

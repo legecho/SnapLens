@@ -7,24 +7,24 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1000001 /* ImageTranslatorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001; };
-		A1000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002; };
-		B1000001 /* OCRProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001; };
-		B1000002 /* VisionOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002; };
-		B1000003 /* OCRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003; };
-		D1000002 /* TranslationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000002; };
-		D1000003 /* GoogleTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000003; };
-		D1000004 /* TranslatorFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000004; };
-		D1000005 /* TranslationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000005; };
-		E1000001 /* ImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000001; };
-		E1000002 /* TranslationRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000002; };
-		E1000003 /* RendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000003; };
-		F1000001 /* ConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000001; };
-		F1000002 /* HotKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000006; };
-		A1000004 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005; };
-		G1000001 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000001; };
-		G1000002 /* CaptureOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000002; };
-		G1000003 /* ScreenCaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000003; };
+		A1000001 /* ImageTranslatorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001 /* ImageTranslatorApp.swift */; };
+		A1000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002 /* AppDelegate.swift */; };
+		A1000004 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005 /* SettingsView.swift */; };
+		B1000001 /* OCRProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001 /* OCRProvider.swift */; };
+		B1000002 /* VisionOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002 /* VisionOCR.swift */; };
+		B1000003 /* OCRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003 /* OCRTests.swift */; };
+		D1000002 /* TranslationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000002 /* TranslationProvider.swift */; };
+		D1000003 /* GoogleTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000003 /* GoogleTranslator.swift */; };
+		D1000004 /* TranslatorFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000004 /* TranslatorFactory.swift */; };
+		D1000005 /* TranslationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000005 /* TranslationTests.swift */; };
+		E1000001 /* ImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000001 /* ImageUtils.swift */; };
+		E1000002 /* TranslationRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000002 /* TranslationRenderer.swift */; };
+		E1000003 /* RendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000003 /* RendererTests.swift */; };
+		F1000001 /* ConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000001 /* ConfigManager.swift */; };
+		F1000002 /* HotKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000006 /* HotKeyManager.swift */; };
+		G1000001 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000001 /* MenuBarView.swift */; };
+		G1000002 /* CaptureOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000002 /* CaptureOverlayView.swift */; };
+		G1000003 /* ScreenCaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000003 /* ScreenCaptureManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,6 +42,7 @@
 		A2000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A2000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A2000004 /* ImageTranslator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ImageTranslator.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2000005 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B2000001 /* OCRProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRProvider.swift; sourceTree = "<group>"; };
 		B2000002 /* VisionOCR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionOCR.swift; sourceTree = "<group>"; };
 		B2000003 /* OCRTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRTests.swift; sourceTree = "<group>"; };
@@ -55,7 +56,6 @@
 		E2000003 /* RendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RendererTests.swift; sourceTree = "<group>"; };
 		F2000001 /* ConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigManager.swift; sourceTree = "<group>"; };
 		F2000006 /* HotKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyManager.swift; sourceTree = "<group>"; };
-		A2000005 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		G2000001 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		G2000002 /* CaptureOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureOverlayView.swift; sourceTree = "<group>"; };
 		G2000003 /* ScreenCaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureManager.swift; sourceTree = "<group>"; };
@@ -167,6 +167,16 @@
 			path = Capture;
 			sourceTree = "<group>";
 		};
+		C4000001 /* ImageTranslatorTests */ = {
+			isa = PBXGroup;
+			children = (
+				B2000003 /* OCRTests.swift */,
+				D2000005 /* TranslationTests.swift */,
+				E2000003 /* RendererTests.swift */,
+			);
+			path = ImageTranslatorTests;
+			sourceTree = "<group>";
+		};
 		E4000001 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
@@ -190,16 +200,6 @@
 				F2000006 /* HotKeyManager.swift */,
 			);
 			path = Services;
-			sourceTree = "<group>";
-		};
-		C4000001 /* ImageTranslatorTests */ = {
-			isa = PBXGroup;
-			children = (
-				B2000003 /* OCRTests.swift */,
-				D2000005 /* TranslationTests.swift */,
-				E2000003 /* RendererTests.swift */,
-			);
-			path = ImageTranslatorTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -248,7 +248,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					A5000001 = {
 						CreatedOnToolsVersion = 15.0;
@@ -372,6 +372,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -395,6 +396,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -433,6 +435,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -448,6 +451,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -460,6 +464,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ImageTranslator/Resources/Info.plist;
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -485,6 +490,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ImageTranslator/Resources/Info.plist;
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -509,6 +515,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mimo.imagetranslatortests;
@@ -526,6 +533,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mimo.imagetranslatortests;
@@ -567,7 +575,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = A8000001 /* Project object */;
 }

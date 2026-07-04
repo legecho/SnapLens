@@ -76,54 +76,40 @@ final class ScreenCaptureManager {
 
     private func captureRegion(_ rect: CGRect) {
         print("[DEBUG] captureRegion called with rect: \(rect)")
-        let midPoint = CGPoint(x: rect.midX, y: rect.midY)
-        let targetDisplay = displayContainingPoint(midPoint)
-        print("[DEBUG] target display: \(targetDisplay)")
-
-        guard let image = CGDisplayCreateImage(targetDisplay) else {
-            print("[DEBUG] failed to create display image")
+        
+        // Use CGWindowListCreateImage to capture the specific region
+        // This avoids coordinate conversion issues
+        let screenRect = NSScreen.main!.frame
+        print("[DEBUG] screen frame: \(screenRect)")
+        
+        // Convert rect from SwiftUI coordinates (top-left origin) to CG coordinates (bottom-left origin)
+        let cgRect = CGRect(
+            x: rect.origin.x,
+            y: screenRect.height - rect.origin.y - rect.height,
+            width: rect.width,
+            height: rect.height
+        )
+        print("[DEBUG] cgRect: \(cgRect)")
+        
+        // Capture the specific region using CGWindowListCreateImage
+        guard let image = CGWindowListCreateImage(
+            cgRect,
+            .optionOnScreenOnly,
+            kCGNullWindowID,
+            [.boundsIgnoreFraming, .nominalResolution]
+        ) else {
+            print("[DEBUG] failed to capture region")
             let completion = captureCompletion
             cleanup()
             completion?(.failure(.captureFailed))
             return
         }
 
-        // Get display bounds to calculate correct crop coordinates
-        let displayBounds = CGDisplayBounds(targetDisplay)
-        print("[DEBUG] display bounds: \(displayBounds)")
-        
-        // Convert screen coordinates to display coordinates
-        // The overlay window covers the full screen, but display might have different origin
-        let displayFrame = NSScreen.screens.first(where: { 
-            ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID) == targetDisplay 
-        })?.frame ?? NSScreen.main!.frame
-        print("[DEBUG] display frame: \(displayFrame)")
-        
-        // Scale factor between points and pixels
-        let scaleX = CGFloat(image.width) / displayFrame.width
-        let scaleY = CGFloat(image.height) / displayFrame.height
-        
-        // Convert rect from screen coordinates to display pixel coordinates
-        let cropRect = CGRect(
-            x: (rect.origin.x - displayFrame.origin.x) * scaleX,
-            y: (displayFrame.height - rect.origin.y + displayFrame.origin.y - rect.height) * scaleY,
-            width: rect.width * scaleX,
-            height: rect.height * scaleY
-        )
-        print("[DEBUG] cropRect: \(cropRect)")
-
-        let croppedImage = image.cropping(to: cropRect)
         let completion = captureCompletion
         cleanup()
 
-        guard let cropped = croppedImage else {
-            print("[DEBUG] failed to crop image")
-            completion?(.failure(.captureFailed))
-            return
-        }
-
-        print("[DEBUG] capture success, size: \(cropped.width)x\(cropped.height)")
-        completion?(.success(cropped))
+        print("[DEBUG] capture success, size: \(image.width)x\(image.height)")
+        completion?(.success(image))
     }
 
     private func displayContainingPoint(_ point: CGPoint) -> CGDirectDisplayID {

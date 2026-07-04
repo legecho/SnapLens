@@ -10,8 +10,6 @@
 		A1000001 /* ImageTranslatorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001 /* ImageTranslatorApp.swift */; };
 		A1000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002 /* AppDelegate.swift */; };
 		A1000004 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005 /* SettingsView.swift */; };
-		G1000004 /* TranslationResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000004 /* TranslationResultView.swift */; };
-		G1000005 /* ScreenCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000005 /* ScreenCaptureView.swift */; };
 		B1000001 /* OCRProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001 /* OCRProvider.swift */; };
 		B1000002 /* VisionOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002 /* VisionOCR.swift */; };
 		B1000003 /* OCRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003 /* OCRTests.swift */; };
@@ -27,6 +25,8 @@
 		G1000001 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000001 /* MenuBarView.swift */; };
 		G1000002 /* CaptureOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000002 /* CaptureOverlayView.swift */; };
 		G1000003 /* ScreenCaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000003 /* ScreenCaptureManager.swift */; };
+		G1000004 /* TranslationResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000004 /* TranslationResultView.swift */; };
+		G1000005 /* ScreenCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000005 /* ScreenCaptureView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -473,6 +473,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = C3HFN9N4Z4;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ImageTranslator/Resources/Info.plist;
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -499,6 +500,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = C3HFN9N4Z4;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ImageTranslator/Resources/Info.plist;
 				INFOPLIST_KEY_LSUIElement = YES;

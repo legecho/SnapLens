@@ -4,10 +4,36 @@ import AppKit
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
+    private var settingsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
         setupPopover()
+
+        // 注册快捷键
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            HotKeyManager.shared.register()
+        }
+
+        // 监听快捷键通知
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleHotKey),
+            name: HotKeyManager.hotKeyTriggeredNotification,
+            object: nil
+        )
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        HotKeyManager.shared.unregister()
+    }
+
+    @objc private func handleHotKey() {
+        // 快捷键触发时，先显示弹窗再触发翻译
+        showPopover()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            NotificationCenter.default.post(name: .menuBarStartTranslation, object: nil)
+        }
     }
 
     private func setupStatusItem() {
@@ -42,6 +68,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             popover.contentViewController?.view.window?.makeKey()
         }
     }
+
+    func openSettings() {
+        if let existing = settingsWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 450, height: 320),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "ImageTranslator Settings"
+        window.contentView = NSHostingView(rootView: SettingsView())
+        window.center()
+        window.isReleasedWhenClosed = false
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        settingsWindow = window
+    }
 }
 
-
+extension Notification.Name {
+    static let menuBarStartTranslation = Notification.Name("menuBarStartTranslation")
+}

@@ -5,7 +5,6 @@ struct MenuBarView: View {
     @State private var isTranslating = false
     @State private var lastError: String?
     @State private var translatedImage: NSImage?
-    @State private var capturedImage: CGImage?
 
     private let screenCaptureManager = ScreenCaptureManager.shared
     private let ocrProvider = VisionOCR()
@@ -44,7 +43,7 @@ struct MenuBarView: View {
             }
 
             if isTranslating {
-                ProgressView()
+                ProgressView("Processing...")
                     .progressViewStyle(.linear)
             }
 
@@ -66,6 +65,9 @@ struct MenuBarView: View {
         }
         .padding()
         .frame(width: 300, height: translatedImage != nil ? 300 : 200)
+        .onReceive(NotificationCenter.default.publisher(for: .menuBarStartTranslation)) { _ in
+            startTranslation()
+        }
     }
 
     private func startTranslation() {
@@ -73,38 +75,22 @@ struct MenuBarView: View {
         lastError = nil
         translatedImage = nil
 
-        screenCaptureManager.startCapture { [self] result in
+        screenCaptureManager.startCapture { result in
             switch result {
             case .success(let cgImage):
-                self.capturedImage = cgImage
                 Task {
-                    await self.processImage()
+                    await processImage(cgImage)
                 }
             case .failure(let error):
                 DispatchQueue.main.async {
                     self.isTranslating = false
-                    switch error {
-                    case .permissionDenied:
-                        self.lastError = "Screen capture permission denied. Please grant permission in System Settings."
-                    case .captureFailed:
-                        self.lastError = "Failed to capture screen."
-                    case .invalidRegion:
-                        self.lastError = "Invalid region selected."
-                    }
+                    self.lastError = error.localizedDescription
                 }
             }
         }
     }
 
-    private func processImage() async {
-        guard let image = capturedImage else {
-            DispatchQueue.main.async {
-                self.isTranslating = false
-                self.lastError = "No image captured."
-            }
-            return
-        }
-
+    private func processImage(_ image: CGImage) async {
         do {
             let textBlocks = try await ocrProvider.recognize(image: image)
             let texts = textBlocks.map { $0.text }
@@ -115,31 +101,20 @@ struct MenuBarView: View {
             )
 
             if let rendered = renderer.render(originalImage: image, textBlocks: textBlocks, translations: translations) {
-                DispatchQueue.main.async {
+                await MainActor.run {
                     self.translatedImage = NSImage(cgImage: rendered, size: NSSize(width: rendered.width, height: rendered.height))
                     self.isTranslating = false
                 }
             } else {
-                DispatchQueue.main.async {
+                await MainActor.run {
                     self.isTranslating = false
                     self.lastError = "Failed to render translation."
                 }
             }
         } catch {
-            DispatchQueue.main.async {
+            await MainActor.run {
                 self.isTranslating = false
-                if let ocrError = error as? OCRError {
-                    switch ocrError {
-                    case .noTextFound:
-                        self.lastError = "No text found in the selected region."
-                    case .recognitionFailed:
-                        self.lastError = "Text recognition failed."
-                    case .invalidImage:
-                        self.lastError = "Invalid image for OCR."
-                    }
-                } else {
-                    self.lastError = "Translation failed: \(error.localizedDescription)"
-                }
+                self.lastError = error.localizedDescription
             }
         }
     }
@@ -153,31 +128,25 @@ struct MenuBarView: View {
 
         panel.begin { response in
             if response == .OK, let url = panel.url {
-                guard let tiffData = image.tiffRepresentation,
-                      let bitmap = NSBitmapImageRep(data: tiffData),
-                      let pngData = bitmap.representation(using: .png, properties: [:]) else {
-                    return
+                if let tiffData = image.tiffRepresentation,
+                   let bitmap = NSBitmapImageRep(data: tiffData),
+                   let pngData = bitmap.representation(using: .png, properties: [:]) {
+                    try? pngData.write(to: url)
                 }
-                try? pngData.write(to: url)
             }
         }
     }
 
     private func clearImage() {
         translatedImage = nil
-        capturedImage = nil
         lastError = nil
     }
 
     private func openSettings() {
-        // TODO: implement
+        NSApp.delegate.flatMap { $0 as? AppDelegate }?.openSettings()
     }
 
     private func quitApp() {
         NSApplication.shared.terminate(nil)
     }
-}
-
-#Preview {
-    MenuBarView()
 }

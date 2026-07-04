@@ -1,19 +1,19 @@
 import SwiftUI
 
-extension NSColor: @retroactive RawRepresentable {
-    public var rawValue: String {
+private extension NSColor {
+    func savedString() -> String? {
         guard let data = try? NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: false) else {
-            return ""
+            return nil
         }
         return data.base64EncodedString()
     }
 
-    public init?(rawValue: String) {
-        guard let data = Data(base64Encoded: rawValue),
+    static func fromSavedString(_ str: String) -> NSColor? {
+        guard let data = Data(base64Encoded: str),
               let color = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSColor.self, from: data) else {
             return nil
         }
-        self = color
+        return color
     }
 }
 
@@ -39,7 +39,7 @@ final class ConfigManager: ObservableObject {
     }
 
     @Published var overlayColor: NSColor {
-        didSet { defaults.set(overlayColor.rawValue, forKey: Keys.overlayColor) }
+        didSet { defaults.set(overlayColor.savedString(), forKey: Keys.overlayColor) }
     }
 
     @Published var autoTranslate: Bool {
@@ -58,7 +58,7 @@ final class ConfigManager: ObservableObject {
         self.googleAPIKey = defaults.string(forKey: Keys.googleAPIKey)
 
         if let savedColor = defaults.string(forKey: Keys.overlayColor) {
-            self.overlayColor = NSColor(rawValue: savedColor) ?? .white
+            self.overlayColor = NSColor.fromSavedString(savedColor) ?? .white
         } else {
             self.overlayColor = .white
         }

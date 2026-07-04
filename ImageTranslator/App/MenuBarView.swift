@@ -75,15 +75,14 @@ struct MenuBarView: View {
         lastError = nil
         translatedImage = nil
 
-        screenCaptureManager.startCapture { [weak self] result in
-            guard let self else { return }
+        screenCaptureManager.startCapture { result in
             switch result {
             case .success(let cgImage):
                 Task {
                     await self.processImage(cgImage)
                 }
             case .failure(let error):
-                await MainActor.run {
+                DispatchQueue.main.async {
                     self.isTranslating = false
                     self.lastError = error.localizedDescription
                 }

@@ -1,10 +1,24 @@
 import Cocoa
 import SwiftUI
 
-enum CaptureError: Error {
+enum CaptureError: Error, LocalizedError {
+    case noScreen
     case permissionDenied
     case captureFailed
     case invalidRegion
+
+    var errorDescription: String? {
+        switch self {
+        case .noScreen:
+            return "No screen available for capture."
+        case .permissionDenied:
+            return "Screen capture permission denied. Please grant permission in System Settings > Privacy & Security > Screen Recording."
+        case .captureFailed:
+            return "Failed to capture screen. Please try again."
+        case .invalidRegion:
+            return "Invalid region selected. Please try again."
+        }
+    }
 }
 
 final class ScreenCaptureManager {

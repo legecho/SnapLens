@@ -85,14 +85,7 @@ struct MenuBarView: View {
             case .failure(let error):
                 await MainActor.run {
                     self.isTranslating = false
-                    switch error {
-                    case .permissionDenied:
-                        self.lastError = "Screen capture permission denied. Please grant permission in System Settings."
-                    case .captureFailed:
-                        self.lastError = "Failed to capture screen."
-                    case .invalidRegion:
-                        self.lastError = "Invalid region selected."
-                    }
+                    self.lastError = error.localizedDescription
                 }
             }
         }
@@ -122,18 +115,7 @@ struct MenuBarView: View {
         } catch {
             await MainActor.run {
                 self.isTranslating = false
-                if let ocrError = error as? OCRError {
-                    switch ocrError {
-                    case .noTextFound:
-                        self.lastError = "No text found in the selected region."
-                    case .recognitionFailed:
-                        self.lastError = "Text recognition failed."
-                    case .invalidImage:
-                        self.lastError = "Invalid image for OCR."
-                    }
-                } else {
-                    self.lastError = "Translation failed: \(error.localizedDescription)"
-                }
+                self.lastError = error.localizedDescription
             }
         }
     }

@@ -12,7 +12,7 @@ enum CaptureError: Error, LocalizedError {
         case .noScreen:
             return "No screen available for capture."
         case .permissionDenied:
-            return "Screen capture permission denied. Please grant permission in System Settings > Privacy & Security > Screen Recording."
+            return "Screen capture permission required. Open System Settings > Privacy & Security > Screen Recording, enable this app, then try again."
         case .captureFailed:
             return "Failed to capture screen. Please try again."
         case .invalidRegion:

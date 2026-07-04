@@ -105,30 +105,18 @@ final class ScreenCaptureManager {
                 }
 
                 // 手动裁剪选区
-                // 使用窗口实际位置计算坐标
-                let displayWidth = CGFloat(display.width)
-                let displayHeight = CGFloat(display.height)
-                
-                // overlay window 的实际 frame
-                let windowFrame = overlayWindow?.frame ?? NSScreen.main!.frame
+                // 用实际截图尺寸 / 屏幕逻辑尺寸 计算缩放
                 let screenFrame = NSScreen.main!.frame
-                
-                // 计算缩放比例：图片尺寸 / 屏幕逻辑尺寸
-                let scaleX = displayWidth / screenFrame.width
-                let scaleY = displayHeight / screenFrame.height
-                
-                // rect 是相对于 view 的坐标，需要加上窗口偏移
-                let windowOffsetX = windowFrame.origin.x - screenFrame.origin.x
-                let windowOffsetY = windowFrame.origin.y - screenFrame.origin.y
+                let scaleX = CGFloat(fullImage.width) / screenFrame.width
+                let scaleY = CGFloat(fullImage.height) / screenFrame.height
                 
                 let cropRect = CGRect(
-                    x: (rect.origin.x + windowOffsetX) * scaleX,
-                    y: (rect.origin.y + windowOffsetY) * scaleY,
+                    x: rect.origin.x * scaleX,
+                    y: rect.origin.y * scaleY,
                     width: rect.width * scaleX,
                     height: rect.height * scaleY
                 )
-                print("[DEBUG] windowFrame: \(windowFrame), screenFrame: \(screenFrame)")
-                print("[DEBUG] offset: \(windowOffsetX)x\(windowOffsetY), scale: \(scaleX)x\(scaleY)")
+                print("[DEBUG] screenFrame: \(screenFrame), image: \(fullImage.width)x\(fullImage.height), scale: \(scaleX)x\(scaleY)")
                 print("[DEBUG] cropRect: \(cropRect)")
 
                 guard let cropped = fullImage.cropping(to: cropRect) else {

@@ -7,6 +7,7 @@ struct CaptureOverlayView: View {
     @State private var dragStart: CGPoint?
     @State private var dragEnd: CGPoint?
     @State private var isDragging = false
+    @State private var eventMonitor: Any?
 
     private var selectionRect: CGRect? {
         guard let start = dragStart, let end = dragEnd else { return nil }
@@ -67,13 +68,13 @@ struct CaptureOverlayView: View {
                     }
             )
             .onAppear {
-                NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-                    if event.keyCode == 53 {
-                        self.onCancel()
-                        return nil
-                    }
+                eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                    if event.keyCode == 53 { self.onCancel(); return nil }
                     return event
                 }
+            }
+            .onDisappear {
+                if let monitor = eventMonitor { NSEvent.removeMonitor(monitor) }
             }
         }
     }

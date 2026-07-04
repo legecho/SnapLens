@@ -1,5 +1,4 @@
 import Cocoa
-import ScreenCaptureKit
 import SwiftUI
 
 enum CaptureError: Error {
@@ -13,8 +12,6 @@ final class ScreenCaptureManager {
 
     private var overlayWindow: NSWindow?
     private var captureCompletion: ((Result<CGImage, CaptureError>) -> Void)?
-    private var capturedRegion: CGRect?
-
     private init() {}
 
     func startCapture(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
@@ -33,8 +30,12 @@ final class ScreenCaptureManager {
     }
 
     private func checkPermission(completion: @escaping (Bool) -> Void) {
-        let hasPermission = CGPreflightScreenCaptureAccess()
-        completion(hasPermission)
+        if CGPreflightScreenCaptureAccess() {
+            completion(true)
+        } else {
+            CGRequestScreenCaptureAccess()
+            completion(false)
+        }
     }
 
     private func showOverlay(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
@@ -60,7 +61,7 @@ final class ScreenCaptureManager {
             backing: .buffered,
             defer: false
         )
-        window.level = .statusBar + 1
+        window.level = .screenSaver
         window.contentView = hostingController.view
         window.isOpaque = false
         window.backgroundColor = .clear
@@ -70,9 +71,10 @@ final class ScreenCaptureManager {
     }
 
     private func captureRegion(_ rect: CGRect) {
-        let displayID = CGMainDisplayID()
+        let midPoint = CGPoint(x: rect.midX, y: rect.midY)
+        let targetDisplay = displayContainingPoint(midPoint)
 
-        guard let image = CGDisplayCreateImage(displayID) else {
+        guard let image = CGDisplayCreateImage(targetDisplay) else {
             cleanup()
             captureCompletion?(.failure(.captureFailed))
             return
@@ -89,12 +91,23 @@ final class ScreenCaptureManager {
         captureCompletion?(.success(cropped))
     }
 
+    private func displayContainingPoint(_ point: CGPoint) -> CGDirectDisplayID {
+        var activeDisplays = [CGDirectDisplayID](repeating: 0, count: 16)
+        var displayCount: UInt32 = 0
+        CGGetActiveDisplayList(16, &activeDisplays, &displayCount)
+
+        for i in 0..<Int(displayCount) {
+            let bounds = CGDisplayBounds(activeDisplays[i])
+            if bounds.contains(point) { return activeDisplays[i] }
+        }
+        return CGMainDisplayID()
+    }
+
     private func cleanup() {
         DispatchQueue.main.async {
             self.overlayWindow?.orderOut(nil)
             self.overlayWindow = nil
             self.captureCompletion = nil
-            self.capturedRegion = nil
         }
     }
 }

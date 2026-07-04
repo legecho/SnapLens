@@ -17,13 +17,25 @@ final class ScreenCaptureManager {
     private init() {}
     
     func captureFullScreen() -> CGImage? {
-        // 截取全屏
-        guard let image = CGDisplayCreateImage(CGMainDisplayID()) else {
-            print("[DEBUG] CGDisplayCreateImage failed")
-            return nil
+        // 方法1: 尝试 CGWindowListCreateImage 捕获所有窗口
+        if let image = CGWindowListCreateImage(
+            .null,
+            .optionOnScreenOnly,
+            kCGNullWindowID,
+            [.boundsIgnoreFraming, .nominalResolution, .bestResolution]
+        ) {
+            print("[DEBUG] CGWindowListCreateImage success: \(image.width)x\(image.height)")
+            return image
         }
-        print("[DEBUG] Full screen captured: \(image.width)x\(image.height)")
-        return image
+        
+        // 方法2: 回退到 CGDisplayCreateImage
+        if let image = CGDisplayCreateImage(CGMainDisplayID()) {
+            print("[DEBUG] CGDisplayCreateImage success: \(image.width)x\(image.height)")
+            return image
+        }
+        
+        print("[DEBUG] All capture methods failed")
+        return nil
     }
     
     func cropImage(_ image: CGImage, rect: CGRect) -> CGImage? {

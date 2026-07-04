@@ -13,6 +13,10 @@
 		B1000001 /* OCRProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001; };
 		B1000002 /* VisionOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002; };
 		B1000003 /* OCRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003; };
+		D1000002 /* TranslationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000002; };
+		D1000003 /* GoogleTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000003; };
+		D1000004 /* TranslatorFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000004; };
+		D1000005 /* TranslationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000005; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +38,10 @@
 		B2000002 /* VisionOCR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionOCR.swift; sourceTree = "<group>"; };
 		B2000003 /* OCRTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRTests.swift; sourceTree = "<group>"; };
 		C2000001 /* ImageTranslatorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ImageTranslatorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D2000002 /* TranslationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationProvider.swift; sourceTree = "<group>"; };
+		D2000003 /* GoogleTranslator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleTranslator.swift; sourceTree = "<group>"; };
+		D2000004 /* TranslatorFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorFactory.swift; sourceTree = "<group>"; };
+		D2000005 /* TranslationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,6 +111,7 @@
 			isa = PBXGroup;
 			children = (
 				B4000002 /* OCR */,
+				B4000003 /* Translation */,
 			);
 			path = Modules;
 			sourceTree = "<group>";
@@ -116,10 +125,21 @@
 			path = OCR;
 			sourceTree = "<group>";
 		};
+		B4000003 /* Translation */ = {
+			isa = PBXGroup;
+			children = (
+				D2000002 /* TranslationProvider.swift */,
+				D2000003 /* GoogleTranslator.swift */,
+				D2000004 /* TranslatorFactory.swift */,
+			);
+			path = Translation;
+			sourceTree = "<group>";
+		};
 		C4000001 /* ImageTranslatorTests */ = {
 			isa = PBXGroup;
 			children = (
 				B2000003 /* OCRTests.swift */,
+				D2000005 /* TranslationTests.swift */,
 			);
 			path = ImageTranslatorTests;
 			sourceTree = "<group>";
@@ -227,6 +247,9 @@
 				A1000002 /* AppDelegate.swift in Sources */,
 				B1000001 /* OCRProvider.swift in Sources */,
 				B1000002 /* VisionOCR.swift in Sources */,
+				D1000002 /* TranslationProvider.swift in Sources */,
+				D1000003 /* GoogleTranslator.swift in Sources */,
+				D1000004 /* TranslatorFactory.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -235,6 +258,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B1000003 /* OCRTests.swift in Sources */,
+				D1000005 /* TranslationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

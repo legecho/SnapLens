@@ -88,7 +88,18 @@ final class ScreenCaptureManager {
             return
         }
 
-        let croppedImage = image.cropping(to: rect)
+        // Retina: CGDisplayCreateImage returns pixels, but rect is in points
+        // Scale rect to match pixel coordinates
+        let scale = CGFloat(image.width) / NSScreen.main!.frame.width
+        let scaledRect = CGRect(
+            x: rect.origin.x * scale,
+            y: rect.origin.y * scale,
+            width: rect.width * scale,
+            height: rect.height * scale
+        )
+        print("[DEBUG] original rect: \(rect), scaled rect: \(scaledRect), scale: \(scale)")
+
+        let croppedImage = image.cropping(to: scaledRect)
         let completion = captureCompletion
         cleanup()
 

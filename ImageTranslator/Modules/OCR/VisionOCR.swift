@@ -15,6 +15,8 @@ final class VisionOCR: OCRProvider {
     }
 
     func recognize(image: CGImage) async throws -> [TextBlock] {
+        print("[DEBUG] OCR input: \(image.width)x\(image.height)")
+        
         let request = VNRecognizeTextRequest { _, _ in }
         request.recognitionLevel = recognitionLevel
         request.recognitionLanguages = recognitionLanguages
@@ -22,11 +24,19 @@ final class VisionOCR: OCRProvider {
 
         let handler = VNImageRequestHandler(cgImage: image, options: [:])
 
-        try handler.perform([request])
+        do {
+            try handler.perform([request])
+        } catch {
+            print("[DEBUG] OCR perform error: \(error)")
+            throw OCRError.recognitionFailed
+        }
 
         guard let observations = request.results else {
+            print("[DEBUG] OCR no results")
             throw OCRError.noTextFound
         }
+        
+        print("[DEBUG] OCR found \(observations.count) observations")
 
         let imageHeight = CGFloat(image.height)
         let imageWidth = CGFloat(image.width)
@@ -43,6 +53,8 @@ final class VisionOCR: OCRProvider {
                 height: boundingBox.height * imageHeight
             )
 
+            print("[DEBUG] OCR text: '\(candidate.string)' confidence: \(candidate.confidence)")
+            
             let block = TextBlock(
                 text: candidate.string,
                 rect: rect,
@@ -52,6 +64,7 @@ final class VisionOCR: OCRProvider {
         }
 
         if textBlocks.isEmpty {
+            print("[DEBUG] OCR no text blocks after filtering")
             throw OCRError.noTextFound
         }
 

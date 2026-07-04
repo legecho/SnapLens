@@ -35,6 +35,15 @@ final class ScreenCaptureManager {
 
     func startCapture(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
         print("[DEBUG] startCapture called")
+        
+        // Check permission first
+        if !CGPreflightScreenCaptureAccess() {
+            print("[DEBUG] permission not granted, requesting...")
+            // Don't request - just inform user
+            completion(.failure(.permissionDenied))
+            return
+        }
+        
         DispatchQueue.main.async {
             print("[DEBUG] showing overlay")
             self.showOverlay(completion: completion)
@@ -77,24 +86,35 @@ final class ScreenCaptureManager {
     private func captureRegion(_ rect: CGRect) {
         print("[DEBUG] captureRegion called with rect: \(rect)")
         
-        // Capture full screen then crop
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+        // Save reference to completion before cleanup
+        let completion = captureCompletion
+        
+        // Close overlay before capturing
+        overlayWindow?.orderOut(nil)
+        overlayWindow = nil
+        captureCompletion = nil
+        
+        // Delay to ensure overlay is completely hidden
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            // Capture full screen
             guard let fullImage = CGDisplayCreateImage(CGMainDisplayID()) else {
                 print("[DEBUG] failed to capture display")
-                let completion = self.captureCompletion
-                self.cleanup()
                 completion?(.failure(.captureFailed))
                 return
             }
             
             print("[DEBUG] full screen: \(fullImage.width)x\(fullImage.height)")
             
-            // Scale factor (Retina = 2x)
+            // Get screen frame in points
             let screenFrame = NSScreen.main!.frame
+            
+            // Calculate scale factor (Retina = 2x)
             let scaleX = CGFloat(fullImage.width) / screenFrame.width
             let scaleY = CGFloat(fullImage.height) / screenFrame.height
             
-            // Convert SwiftUI rect (top-left origin) to CG rect (bottom-left origin)
+            // Convert rect from SwiftUI coordinates to CG coordinates
+            // SwiftUI: (0,0) at top-left, Y increases downward
+            // CG: (0,0) at bottom-left, Y increases upward
             let cropRect = CGRect(
                 x: rect.origin.x * scaleX,
                 y: (screenFrame.height - rect.origin.y - rect.height) * scaleY,
@@ -103,26 +123,21 @@ final class ScreenCaptureManager {
             )
             print("[DEBUG] cropRect: \(cropRect)")
             
+            // Crop the image
             guard let cropped = fullImage.cropping(to: cropRect) else {
                 print("[DEBUG] failed to crop")
-                let completion = self.captureCompletion
-                self.cleanup()
                 completion?(.failure(.captureFailed))
                 return
             }
             
             print("[DEBUG] capture success: \(cropped.width)x\(cropped.height)")
-            let completion = self.captureCompletion
-            self.cleanup()
             completion?(.success(cropped))
         }
     }
 
     private func cleanup() {
-        DispatchQueue.main.async {
-            self.overlayWindow?.orderOut(nil)
-            self.overlayWindow = nil
-            self.captureCompletion = nil
-        }
+        overlayWindow?.orderOut(nil)
+        overlayWindow = nil
+        captureCompletion = nil
     }
 }

@@ -5,15 +5,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
     private var settingsWindow: NSWindow?
+    private var isInitialized = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
         setupPopover()
-        HotKeyManager.shared.register()
+        
+        // Delay hotkey registration to ensure app is fully initialized
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            HotKeyManager.shared.register()
+            self.isInitialized = true
+            print("[DEBUG] App initialized, hotkey registered")
+        }
+        
+        // Listen for hotkey and show popover
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleHotKey),
+            name: HotKeyManager.hotKeyTriggeredNotification,
+            object: nil
+        )
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         HotKeyManager.shared.unregister()
+    }
+
+    @objc private func handleHotKey() {
+        print("[DEBUG] Hotkey received")
+        // Show popover first, then trigger translation
+        DispatchQueue.main.async {
+            self.showPopover()
+            // Small delay to ensure popover is visible
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                NotificationCenter.default.post(name: .hotKeyTriggered, object: nil)
+            }
+        }
     }
 
     private func setupStatusItem() {
@@ -38,14 +65,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentViewController = NSHostingController(rootView: MenuBarView())
     }
 
-    @objc func togglePopover() {
+    private func showPopover() {
         guard let button = statusItem.button else { return }
+        if !popover.isShown {
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            popover.contentViewController?.view.window?.makeKey()
+        }
+    }
 
+    @objc func togglePopover() {
         if popover.isShown {
             popover.performClose(nil)
         } else {
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.makeKey()
+            showPopover()
         }
     }
 
@@ -70,6 +102,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         settingsWindow = window
     }
+}
+
+extension Notification.Name {
+    static let hotKeyTriggered = Notification.Name("hotKeyTriggered")
 }
 
 

@@ -9,7 +9,7 @@ final class AppleTranslator: TranslationProvider {
         let source = Locale.Language(identifier: mapLanguageCode(sourceLang))
         let target = Locale.Language(identifier: mapLanguageCode(targetLang))
 
-        let session = TranslationSession(source: source, target: target)
+        let session = TranslationSession(installedSource: source, target: target)
 
         return try await withCheckedThrowingContinuation { continuation in
             session.translate(text) { result in

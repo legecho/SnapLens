@@ -15,13 +15,24 @@ final class VisionOCR: OCRProvider {
     }
 
     func recognize(image: CGImage) async throws -> [TextBlock] {
-        print("[DEBUG] OCR input: \(image.width)x\(image.height)")
+        print("[DEBUG] OCR input: \(image.width)x\(image.height), alphaInfo: \(image.alphaInfo.rawValue), bitsPerPixel: \(image.bitsPerPixel)")
         
-        let request = VNRecognizeTextRequest { _, _ in }
-        request.recognitionLevel = recognitionLevel
-        request.recognitionLanguages = recognitionLanguages
+        // Save image for debugging
+        let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("ocr_debug_\(Int(Date().timeIntervalSince1970)).png")
+        if let nsImage = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height)),
+           let tiffData = nsImage.tiffRepresentation,
+           let bitmap = NSBitmapImageRep(data: tiffData),
+           let pngData = bitmap.representation(using: .png, properties: [:]) {
+            try? pngData.write(to: tempURL)
+            print("[DEBUG] OCR debug image saved to: \(tempURL.path)")
+        }
+        
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.recognitionLanguages = ["en-US", "zh-Hans", "zh-Hant"]
         request.usesLanguageCorrection = true
 
+        // Convert to proper format for Vision
         let handler = VNImageRequestHandler(cgImage: image, options: [:])
 
         do {

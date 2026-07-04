@@ -6,6 +6,7 @@ enum CaptureError: Error {
     case permissionDenied
     case captureFailed
     case invalidRegion
+    case noDisplayFound
 }
 
 @available(macOS 14.0, *)
@@ -76,43 +77,45 @@ final class ScreenCaptureManager {
     private func captureRegion(_ rect: CGRect) {
         print("[DEBUG] captureRegion rect (points): \(rect)")
 
-        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        let scaledRect = CGRect(
-            x: rect.origin.x * scale,
-            y: rect.origin.y * scale,
-            width: rect.width * scale,
-            height: rect.height * scale
-        )
-        print("[DEBUG] scaled rect (pixels): \(scaledRect), scale: \(scale)")
-
         Task {
             do {
+                // 1. 获取屏幕内容
                 let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
                 guard let display = content.displays.first else {
                     cleanup()
-                    captureCompletion?(.failure(.captureFailed))
+                    captureCompletion?(.failure(.noDisplayFound))
                     return
                 }
 
+                // 2. 创建过滤器
+                let filter = SCContentFilter(display: display, excludingWindows: [])
+
+                // 3. 配置截图参数
                 let config = SCStreamConfiguration()
-                config.width = Int(display.width)
-                config.height = Int(display.height)
                 config.pixelFormat = kCVPixelFormatType_32BGRA
                 config.colorSpace = CGColorSpaceCreateDeviceRGB()
 
-                let image = try await SCImageManager.captureImage(content: content, configuration: config)
-                print("[DEBUG] captured: \(image.width)x\(image.height)")
+                // 根据选区设置裁剪范围（像素坐标）
+                let screenFrame = NSScreen.main?.frame ?? .zero
+                let scaleFactor = Int(NSScreen.main?.backingScaleFactor ?? 2.0)
 
-                // 裁剪选区
-                guard let cropped = image.cropping(to: scaledRect) else {
-                    cleanup()
-                    captureCompletion?(.failure(.captureFailed))
-                    return
-                }
+                config.sourceRect = CGRect(
+                    x: Int(rect.origin.x) * scaleFactor,
+                    y: Int(rect.origin.y) * scaleFactor,
+                    width: Int(rect.size.width) * scaleFactor,
+                    height: Int(rect.size.height) * scaleFactor
+                )
+                config.width = Int(rect.size.width) * scaleFactor
+                config.height = Int(rect.size.height) * scaleFactor
 
-                print("[DEBUG] cropped: \(cropped.width)x\(cropped.height)")
+                print("[DEBUG] config: sourceRect=\(config.sourceRect), size=\(config.width)x\(config.height)")
+
+                // 4. 截图
+                let cgImage = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
+                print("[DEBUG] captured: \(cgImage.width)x\(cgImage.height)")
+
                 cleanup()
-                captureCompletion?(.success(cropped))
+                captureCompletion?(.success(cgImage))
 
             } catch {
                 print("[DEBUG] capture error: \(error)")

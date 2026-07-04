@@ -14,91 +14,109 @@ enum CaptureError: Error, LocalizedError {
         case .permissionDenied:
             return "需要屏幕录制权限。"
         case .captureFailed:
-            return "Failed to capture screen. Please try again."
+            return "Failed to capture screen."
         case .invalidRegion:
-            return "Invalid region selected. Please try again."
+            return "Invalid region selected."
         }
     }
 }
 
+class OverlayWindow: NSWindow {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+}
+
 final class ScreenCaptureManager {
     static let shared = ScreenCaptureManager()
+
+    private var overlayWindow: OverlayWindow?
     private var captureCompletion: ((Result<CGImage, CaptureError>) -> Void)?
     private init() {}
 
     func startCapture(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
         print("[DEBUG] startCapture called")
-        captureCompletion = completion
-        
-        // 直接截屏，不使用覆盖层
         DispatchQueue.main.async {
-            self.captureScreen()
+            self.showOverlay(completion: completion)
         }
     }
 
-    private func captureScreen() {
-        print("[DEBUG] captureScreen called")
-        
-        // 获取所有窗口信息
-        guard let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] else {
-            print("[DEBUG] Failed to get window list")
-            captureCompletion?(.failure(.captureFailed))
-            return
-        }
-        
-        print("[DEBUG] Found \(windowList.count) windows")
-        
-        // 打印所有窗口信息
-        for (index, window) in windowList.enumerated() {
-            let name = window[kCGWindowName as String] as? String ?? "Unknown"
-            let owner = window[kCGWindowOwnerName as String] as? String ?? "Unknown"
-            let bounds = window[kCGWindowBounds as String] as? [String: CGFloat] ?? [:]
-            let layer = window[kCGWindowLayer as String] as? Int ?? 0
-            print("[DEBUG] Window \(index): \(owner) - \(name), layer: \(layer), bounds: \(bounds)")
-        }
-        
-        // 尝试截取最上层窗口
-        for window in windowList {
-            guard let windowNumber = window[kCGWindowNumber as String] as? CGWindowID,
-                  let layer = window[kCGWindowLayer as String] as? Int,
-                  layer == 0, // 只取普通窗口（layer 0）
-                  let name = window[kCGWindowName as String] as? String,
-                  !name.isEmpty else {
-                continue
+    private func showOverlay(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
+        captureCompletion = completion
+
+        let overlayView = CaptureOverlayView(
+            onSelectionComplete: { [weak self] rect in
+                self?.captureRegion(rect)
+            },
+            onCancel: { [weak self] in
+                let completion = self?.captureCompletion
+                self?.cleanup()
+                completion?(.failure(.invalidRegion))
             }
-            
-            print("[DEBUG] Trying to capture window: \(name)")
-            
-            if let image = CGWindowListCreateImage(
-                .null,
-                .optionIncludingWindow,
-                windowNumber,
-                [.boundsIgnoreFraming, .bestResolution, .nominalResolution]
-            ) {
-                print("[DEBUG] Captured window '\(name)': \(image.width)x\(image.height)")
-                
-                // 保存截图
-                let debugURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("debug_window_\(name)_\(Int(Date().timeIntervalSince1970)).png")
-                let nsImage = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
-                if let tiffData = nsImage.tiffRepresentation,
-                   let bitmap = NSBitmapImageRep(data: tiffData),
-                   let pngData = bitmap.representation(using: .png, properties: [:]) {
-                    try? pngData.write(to: debugURL)
-                    print("[DEBUG] Window screenshot saved to: \(debugURL.path)")
-                }
-                
-                captureCompletion?(.success(image))
+        )
+
+        let hostingController = NSHostingController(rootView: overlayView)
+        hostingController.view.wantsLayer = true
+        hostingController.view.layer?.backgroundColor = NSColor.clear.cgColor
+
+        let window = OverlayWindow(
+            contentRect: NSScreen.main?.frame ?? .zero,
+            styleMask: .borderless,
+            backing: .buffered,
+            defer: false
+        )
+        window.level = .screenSaver
+        window.contentView = hostingController.view
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.collectionBehavior = [.canJoinAllSpaces, .stationary]
+        window.makeKeyAndOrderFront(nil)
+
+        overlayWindow = window
+    }
+
+    private func captureRegion(_ rect: CGRect) {
+        print("[DEBUG] captureRegion called with rect: \(rect)")
+        
+        let completion = captureCompletion
+        overlayWindow?.orderOut(nil)
+        overlayWindow = nil
+        captureCompletion = nil
+        
+        // 先截全屏，再裁剪指定区域
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            guard let fullImage = CGDisplayCreateImage(CGMainDisplayID()) else {
+                print("[DEBUG] CGDisplayCreateImage failed")
+                completion?(.failure(.captureFailed))
                 return
             }
+            
+            let screenFrame = NSScreen.main!.frame
+            let scaleX = CGFloat(fullImage.width) / screenFrame.width
+            let scaleY = CGFloat(fullImage.height) / screenFrame.height
+            
+            // SwiftUI 坐标 → CG 坐标
+            let cropRect = CGRect(
+                x: rect.origin.x * scaleX,
+                y: (screenFrame.height - rect.origin.y - rect.height) * scaleY,
+                width: rect.width * scaleX,
+                height: rect.height * scaleY
+            )
+            print("[DEBUG] fullImage: \(fullImage.width)x\(fullImage.height), screenFrame: \(screenFrame), cropRect: \(cropRect)")
+            
+            guard let cropped = fullImage.cropping(to: cropRect) else {
+                print("[DEBUG] crop failed")
+                completion?(.failure(.captureFailed))
+                return
+            }
+            
+            print("[DEBUG] capture success: \(cropped.width)x\(cropped.height)")
+            completion?(.success(cropped))
         }
-        
-        // 如果没有找到可截取的窗口，尝试截取整个屏幕
-        print("[DEBUG] No window captured, trying full screen")
-        if let image = CGDisplayCreateImage(CGMainDisplayID()) {
-            print("[DEBUG] Full screen captured: \(image.width)x\(image.height)")
-            captureCompletion?(.success(image))
-        } else {
-            captureCompletion?(.failure(.captureFailed))
-        }
+    }
+
+    private func cleanup() {
+        overlayWindow?.orderOut(nil)
+        overlayWindow = nil
+        captureCompletion = nil
     }
 }

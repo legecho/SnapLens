@@ -111,9 +111,8 @@ final class TranslationRenderer {
 
         let candidateLines = text.components(separatedBy: .newlines)
 
-        var fontSize = baseFontSize
-
         for candidate in candidateLines {
+            var fontSize = baseFontSize
             let trimmed = candidate.trimmingCharacters(in: .whitespaces)
             if trimmed.isEmpty {
                 result.append(("", fontSize, CGSize(width: 0, height: fontSize * 1.2)))

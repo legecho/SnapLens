@@ -61,7 +61,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
         
-        let window = NSWindow(
+        let window = OverlayWindow(
             contentRect: NSScreen.main?.frame ?? .zero,
             styleMask: .borderless,
             backing: .buffered,

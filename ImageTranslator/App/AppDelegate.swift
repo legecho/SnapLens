@@ -12,6 +12,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         HotKeyManager.shared.register()
     }
 
+    func applicationWillTerminate(_ notification: Notification) {
+        HotKeyManager.shared.unregister()
+    }
+
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 

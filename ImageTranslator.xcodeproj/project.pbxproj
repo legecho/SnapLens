@@ -16,6 +16,7 @@
 		D1000002 /* TranslationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000002 /* TranslationProvider.swift */; };
 		D1000003 /* GoogleTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000003 /* GoogleTranslator.swift */; };
 		D1000004 /* TranslatorFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000004 /* TranslatorFactory.swift */; };
+		D1000006 /* MockTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000006 /* MockTranslator.swift */; };
 		D1000005 /* TranslationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000005 /* TranslationTests.swift */; };
 		E1000001 /* ImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000001 /* ImageUtils.swift */; };
 		E1000002 /* TranslationRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000002 /* TranslationRenderer.swift */; };
@@ -50,6 +51,7 @@
 		D2000002 /* TranslationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationProvider.swift; sourceTree = "<group>"; };
 		D2000003 /* GoogleTranslator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleTranslator.swift; sourceTree = "<group>"; };
 		D2000004 /* TranslatorFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorFactory.swift; sourceTree = "<group>"; };
+		D2000006 /* MockTranslator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockTranslator.swift; sourceTree = "<group>"; };
 		D2000005 /* TranslationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationTests.swift; sourceTree = "<group>"; };
 		E2000001 /* ImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUtils.swift; sourceTree = "<group>"; };
 		E2000002 /* TranslationRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationRenderer.swift; sourceTree = "<group>"; };
@@ -155,6 +157,7 @@
 				D2000002 /* TranslationProvider.swift */,
 				D2000003 /* GoogleTranslator.swift */,
 				D2000004 /* TranslatorFactory.swift */,
+				D2000006 /* MockTranslator.swift */,
 			);
 			path = Translation;
 			sourceTree = "<group>";
@@ -311,6 +314,7 @@
 				D1000002 /* TranslationProvider.swift in Sources */,
 				D1000003 /* GoogleTranslator.swift in Sources */,
 				D1000004 /* TranslatorFactory.swift in Sources */,
+				D1000006 /* MockTranslator.swift in Sources */,
 				E1000001 /* ImageUtils.swift in Sources */,
 				E1000002 /* TranslationRenderer.swift in Sources */,
 				F1000001 /* ConfigManager.swift in Sources */,

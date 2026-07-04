@@ -163,7 +163,7 @@ struct MenuBarView: View {
     }
 
     private func openSettings() {
-        // TODO: implement
+        NSApp.delegate.flatMap { $0 as? AppDelegate }?.openSettings()
     }
 
     private func quitApp() {

@@ -21,6 +21,7 @@
 		E1000002 /* TranslationRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000002; };
 		E1000003 /* RendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000003; };
 		F1000001 /* ConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000001; };
+		A1000004 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,6 +51,7 @@
 		E2000002 /* TranslationRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationRenderer.swift; sourceTree = "<group>"; };
 		E2000003 /* RendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RendererTests.swift; sourceTree = "<group>"; };
 		F2000001 /* ConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigManager.swift; sourceTree = "<group>"; };
+		A2000005 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,6 +98,7 @@
 			isa = PBXGroup;
 			children = (
 				A2000002 /* AppDelegate.swift */,
+				A2000005 /* SettingsView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -289,6 +292,7 @@
 				E1000001 /* ImageUtils.swift in Sources */,
 				E1000002 /* TranslationRenderer.swift in Sources */,
 				F1000001 /* ConfigManager.swift in Sources */,
+				A1000004 /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

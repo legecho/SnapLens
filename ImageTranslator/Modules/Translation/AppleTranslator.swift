@@ -9,10 +9,13 @@ final class AppleTranslator: TranslationProvider {
         let source = Locale.Language(identifier: mapLanguageCode(sourceLang))
         let target = Locale.Language(identifier: mapLanguageCode(targetLang))
 
-        let session = TranslationSession(installedSource: source, target: target)
+        let session = TranslationSession()
+        session.configuration.source = source
+        session.configuration.target = target
 
         return try await withCheckedThrowingContinuation { continuation in
-            session.translate(text) { result in
+            let task = session.translate(text)
+            task.result { result in
                 switch result {
                 case .success(let response):
                     continuation.resume(returning: response.targetString)
@@ -20,6 +23,7 @@ final class AppleTranslator: TranslationProvider {
                     continuation.resume(throwing: error)
                 }
             }
+            task.resume()
         }
     }
 

@@ -65,6 +65,9 @@ struct MenuBarView: View {
         }
         .padding()
         .frame(width: 300, height: translatedImage != nil ? 300 : 200)
+        .onReceive(NotificationCenter.default.publisher(for: HotKeyManager.hotKeyTriggeredNotification)) { _ in
+            startTranslation()
+        }
     }
 
     private func startTranslation() {

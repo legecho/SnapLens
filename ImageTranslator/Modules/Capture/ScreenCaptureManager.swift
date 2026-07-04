@@ -94,11 +94,13 @@ final class ScreenCaptureManager {
                 let fullImage = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
                 print("[DEBUG] full screen: \(fullImage.width)x\(fullImage.height)")
 
-                // 手动裁剪选区（ScreenCaptureKit 和 SwiftUI 都是 (0,0) 在左上角，无需翻转）
+                // 手动裁剪选区
+                // ScreenCaptureKit 使用 Core Graphics 坐标系（左下角为原点），需要翻转 Y
                 let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+                let screenHeight = NSScreen.main?.frame.height ?? 1080
                 let cropRect = CGRect(
                     x: rect.origin.x * scale,
-                    y: rect.origin.y * scale,
+                    y: (screenHeight - rect.origin.y - rect.height) * scale,
                     width: rect.width * scale,
                     height: rect.height * scale
                 )

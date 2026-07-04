@@ -94,8 +94,8 @@ final class ScreenCaptureManager {
             
             // Save full screen for debugging
             let debugURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("debug_fullscreen_\(Int(Date().timeIntervalSince1970)).png")
-            if let nsImage = NSImage(cgImage: fullImage, size: NSSize(width: fullImage.width, height: fullImage.height)),
-               let tiffData = nsImage.tiffRepresentation,
+            let nsImage = NSImage(cgImage: fullImage, size: NSSize(width: fullImage.width, height: fullImage.height))
+            if let tiffData = nsImage.tiffRepresentation,
                let bitmap = NSBitmapImageRep(data: tiffData),
                let pngData = bitmap.representation(using: .png, properties: [:]) {
                 try? pngData.write(to: debugURL)

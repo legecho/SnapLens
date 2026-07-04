@@ -12,7 +12,7 @@ enum CaptureError: Error, LocalizedError {
         case .noScreen:
             return "No screen available for capture."
         case .permissionDenied:
-            return "需要屏幕录制权限。请打开系统设置 > 隐私与安全性 > 屏幕录制，开启 ImageTranslator，然后重启 App 再试。"
+            return "需要屏幕录制权限。"
         case .captureFailed:
             return "Failed to capture screen. Please try again."
         case .invalidRegion:
@@ -77,57 +77,104 @@ final class ScreenCaptureManager {
     private func captureRegion(_ rect: CGRect) {
         print("[DEBUG] captureRegion called with rect: \(rect)")
         
-        // Save completion and close overlay
         let completion = captureCompletion
+        
+        // Close overlay
         overlayWindow?.orderOut(nil)
         overlayWindow = nil
         captureCompletion = nil
         
-        // Wait for overlay to fully disappear
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            // Capture full screen first for debugging
-            guard let fullImage = CGDisplayCreateImage(CGMainDisplayID()) else {
-                print("[DEBUG] CGDisplayCreateImage failed")
-                completion?(.failure(.captureFailed))
-                return
-            }
-            
-            // Save full screen for debugging
-            let debugURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("debug_fullscreen_\(Int(Date().timeIntervalSince1970)).png")
-            let nsImage = NSImage(cgImage: fullImage, size: NSSize(width: fullImage.width, height: fullImage.height))
-            if let tiffData = nsImage.tiffRepresentation,
-               let bitmap = NSBitmapImageRep(data: tiffData),
-               let pngData = bitmap.representation(using: .png, properties: [:]) {
-                try? pngData.write(to: debugURL)
-                print("[DEBUG] Full screen saved to: \(debugURL.path)")
-            }
-            
-            print("[DEBUG] full screen: \(fullImage.width)x\(fullImage.height)")
-            
             let screenFrame = NSScreen.main!.frame
-            print("[DEBUG] screen frame: \(screenFrame)")
             
-            let scaleX = CGFloat(fullImage.width) / screenFrame.width
-            let scaleY = CGFloat(fullImage.height) / screenFrame.height
-            print("[DEBUG] scale: \(scaleX)x\(scaleY)")
-            
-            // Convert SwiftUI rect to CG coordinates
-            let cropRect = CGRect(
-                x: rect.origin.x * scaleX,
-                y: (screenFrame.height - rect.origin.y - rect.height) * scaleY,
-                width: rect.width * scaleX,
-                height: rect.height * scaleY
+            // Convert SwiftUI rect (top-left origin) to CG rect (bottom-left origin)
+            let cgRect = CGRect(
+                x: rect.origin.x,
+                y: screenFrame.height - rect.origin.y - rect.height,
+                width: rect.width,
+                height: rect.height
             )
-            print("[DEBUG] cropRect: \(cropRect)")
+            print("[DEBUG] cgRect: \(cgRect)")
             
-            guard let cropped = fullImage.cropping(to: cropRect) else {
-                print("[DEBUG] crop failed")
+            // Get list of on-screen windows
+            let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] ?? []
+            print("[DEBUG] Found \(windowList.count) on-screen windows")
+            
+            // Find windows that intersect with our selection rect
+            var bestImage: CGImage?
+            
+            for windowInfo in windowList {
+                guard let windowID = windowInfo[kCGWindowOwnerPID as String] as? CGWindowID,
+                      let boundsDict = windowInfo[kCGWindowBounds as String] as? [String: CGFloat],
+                      let windowName = windowInfo[kCGWindowName as String] as? String else {
+                    continue
+                }
+                
+                let windowBounds = CGRect(
+                    x: boundsDict["X"] ?? 0,
+                    y: boundsDict["Y"] ?? 0,
+                    width: boundsDict["Width"] ?? 0,
+                    height: boundsDict["Height"] ?? 0
+                )
+                
+                // Check if this window intersects with our selection
+                if windowBounds.intersects(cgRect) {
+                    print("[DEBUG] Window '\(windowName)' intersects with selection")
+                    
+                    // Try to capture this specific window
+                    if let windowImage = CGWindowListCreateImage(
+                        .null,
+                        .optionIncludingWindow,
+                        windowID,
+                        [.boundsIgnoreFraming, .bestResolution]
+                    ) {
+                        print("[DEBUG] Captured window '\(windowName)': \(windowImage.width)x\(windowImage.height)")
+                        bestImage = windowImage
+                        break
+                    }
+                }
+            }
+            
+            // If no specific window captured, try capturing the region from all on-screen content
+            if bestImage == nil {
+                print("[DEBUG] No window captured, trying region capture")
+                bestImage = CGWindowListCreateImage(
+                    cgRect,
+                    .optionOnScreenOnly,
+                    kCGNullWindowID,
+                    [.boundsIgnoreFraming, .bestResolution]
+                )
+            }
+            
+            guard let finalImage = bestImage else {
+                print("[DEBUG] All capture methods failed")
                 completion?(.failure(.captureFailed))
                 return
             }
             
-            print("[DEBUG] capture success: \(cropped.width)x\(cropped.height)")
-            completion?(.success(cropped))
+            print("[DEBUG] Final capture: \(finalImage.width)x\(finalImage.height)")
+            
+            // If we captured a full window, crop to selection
+            if finalImage.width > Int(cgRect.width * 2) || finalImage.height > Int(cgRect.height * 2) {
+                let screenFrame = NSScreen.main!.frame
+                let scaleX = CGFloat(finalImage.width) / screenFrame.width
+                let scaleY = CGFloat(finalImage.height) / screenFrame.height
+                
+                let cropRect = CGRect(
+                    x: rect.origin.x * scaleX,
+                    y: (screenFrame.height - rect.origin.y - rect.height) * scaleY,
+                    width: rect.width * scaleX,
+                    height: rect.height * scaleY
+                )
+                
+                if let cropped = finalImage.cropping(to: cropRect) {
+                    print("[DEBUG] Cropped to: \(cropped.width)x\(cropped.height)")
+                    completion?(.success(cropped))
+                    return
+                }
+            }
+            
+            completion?(.success(finalImage))
         }
     }
 

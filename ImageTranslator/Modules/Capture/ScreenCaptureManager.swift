@@ -1,54 +1,113 @@
 import Cocoa
 import SwiftUI
 
-enum CaptureError: Error, LocalizedError {
-    case captureFailed
+enum CaptureError: Error {
     case permissionDenied
-
-    var errorDescription: String? {
-        switch self {
-        case .captureFailed:
-            return "截图失败"
-        case .permissionDenied:
-            return "需要屏幕录制权限"
-        }
-    }
+    case captureFailed
+    case invalidRegion
 }
 
 final class ScreenCaptureManager {
     static let shared = ScreenCaptureManager()
+
+    private var overlayWindow: NSWindow?
+    private var captureCompletion: ((Result<CGImage, CaptureError>) -> Void)?
     private init() {}
 
-    func captureFullScreen() -> CGImage? {
-        // 方法1: ScreenCaptureKit (macOS 13+)
-        if #available(macOS 13.0, *) {
-            // ScreenCaptureKit 需要异步调用，这里同步方法暂时跳过
-        }
+    func startCapture(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
+        checkPermission { [weak self] granted in
+            guard granted else {
+                DispatchQueue.main.async {
+                    completion(.failure(.permissionDenied))
+                }
+                return
+            }
 
-        // 方法2: CGDisplayCreateImage
-        if let image = CGDisplayCreateImage(CGMainDisplayID()) {
-            print("[DEBUG] CGDisplayCreateImage: \(image.width)x\(image.height)")
-            return image
+            DispatchQueue.main.async {
+                self?.showOverlay(completion: completion)
+            }
         }
-
-        print("[DEBUG] All capture methods failed")
-        return nil
     }
 
-    func cropImage(_ image: CGImage, rect: CGRect) -> CGImage? {
-        // rect 已经是图片像素坐标，直接裁剪
-        print("[DEBUG] cropImage: \(rect)")
-        return image.cropping(to: rect)
+    private func checkPermission(completion: @escaping (Bool) -> Void) {
+        if CGPreflightScreenCaptureAccess() {
+            completion(true)
+        } else {
+            CGRequestScreenCaptureAccess()
+            completion(false)
+        }
     }
 
-    func saveDebugImage(_ image: CGImage, prefix: String) {
-        let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("\(prefix)_\(Int(Date().timeIntervalSince1970)).png")
-        let nsImage = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
-        if let tiffData = nsImage.tiffRepresentation,
-           let bitmap = NSBitmapImageRep(data: tiffData),
-           let pngData = bitmap.representation(using: .png, properties: [:]) {
-            try? pngData.write(to: url)
-            print("[DEBUG] Saved \(prefix) to: \(url.path)")
+    private func showOverlay(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
+        captureCompletion = completion
+
+        let overlayView = CaptureOverlayView(
+            onSelectionComplete: { [weak self] rect in
+                self?.captureRegion(rect)
+            },
+            onCancel: { [weak self] in
+                self?.cleanup()
+                self?.captureCompletion?(.failure(.invalidRegion))
+            }
+        )
+
+        let hostingController = NSHostingController(rootView: overlayView)
+        hostingController.view.wantsLayer = true
+        hostingController.view.layer?.backgroundColor = NSColor.clear.cgColor
+
+        let window = NSWindow(
+            contentRect: NSScreen.main?.frame ?? .zero,
+            styleMask: .borderless,
+            backing: .buffered,
+            defer: false
+        )
+        window.level = .screenSaver
+        window.contentView = hostingController.view
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.makeKeyAndOrderFront(nil)
+
+        overlayWindow = window
+    }
+
+    private func captureRegion(_ rect: CGRect) {
+        let midPoint = CGPoint(x: rect.midX, y: rect.midY)
+        let targetDisplay = displayContainingPoint(midPoint)
+
+        guard let image = CGDisplayCreateImage(targetDisplay) else {
+            cleanup()
+            captureCompletion?(.failure(.captureFailed))
+            return
+        }
+
+        let croppedImage = image.cropping(to: rect)
+        cleanup()
+
+        guard let cropped = croppedImage else {
+            captureCompletion?(.failure(.captureFailed))
+            return
+        }
+
+        captureCompletion?(.success(cropped))
+    }
+
+    private func displayContainingPoint(_ point: CGPoint) -> CGDirectDisplayID {
+        var activeDisplays = [CGDirectDisplayID](repeating: 0, count: 16)
+        var displayCount: UInt32 = 0
+        CGGetActiveDisplayList(16, &activeDisplays, &displayCount)
+
+        for i in 0..<Int(displayCount) {
+            let bounds = CGDisplayBounds(activeDisplays[i])
+            if bounds.contains(point) { return activeDisplays[i] }
+        }
+        return CGMainDisplayID()
+    }
+
+    private func cleanup() {
+        DispatchQueue.main.async {
+            self.overlayWindow?.orderOut(nil)
+            self.overlayWindow = nil
+            self.captureCompletion = nil
         }
     }
 }

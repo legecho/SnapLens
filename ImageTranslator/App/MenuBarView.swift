@@ -137,7 +137,9 @@ struct MenuBarView: View {
                 do {
                     try pngData.write(to: url)
                 } catch {
-                    lastError = "Failed to save image: \(error.localizedDescription)"
+                    Task { @MainActor in
+                        lastError = "Failed to save image: \(error.localizedDescription)"
+                    }
                 }
             }
         }

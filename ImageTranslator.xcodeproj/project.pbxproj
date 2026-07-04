@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		A1000001 /* ImageTranslatorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001; };
 		A1000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002; };
-		A1000003 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A2000003; };
 		B1000001 /* OCRProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001; };
 		B1000002 /* VisionOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002; };
 		B1000003 /* OCRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003; };
@@ -284,7 +283,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1000003 /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

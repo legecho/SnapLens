@@ -78,8 +78,8 @@ struct MenuBarView: View {
         screenCaptureManager.startCapture { result in
             switch result {
             case .success(let cgImage):
-                Task { [weak self] in
-                    await self?.processImage(cgImage)
+                Task {
+                    await self.processImage(cgImage)
                 }
             case .failure(let error):
                 DispatchQueue.main.async {

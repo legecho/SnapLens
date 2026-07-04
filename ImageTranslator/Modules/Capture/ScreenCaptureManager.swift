@@ -84,19 +84,32 @@ final class ScreenCaptureManager {
         captureCompletion = nil
         
         // Wait for overlay to fully disappear
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            // Capture full screen
-            guard let displayImage = CGDisplayCreateImage(CGMainDisplayID()) else {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            // Capture full screen first for debugging
+            guard let fullImage = CGDisplayCreateImage(CGMainDisplayID()) else {
                 print("[DEBUG] CGDisplayCreateImage failed")
                 completion?(.failure(.captureFailed))
                 return
             }
             
-            print("[DEBUG] full screen captured: \(displayImage.width)x\(displayImage.height)")
+            // Save full screen for debugging
+            let debugURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("debug_fullscreen_\(Int(Date().timeIntervalSince1970)).png")
+            if let nsImage = NSImage(cgImage: fullImage, size: NSSize(width: fullImage.width, height: fullImage.height)),
+               let tiffData = nsImage.tiffRepresentation,
+               let bitmap = NSBitmapImageRep(data: tiffData),
+               let pngData = bitmap.representation(using: .png, properties: [:]) {
+                try? pngData.write(to: debugURL)
+                print("[DEBUG] Full screen saved to: \(debugURL.path)")
+            }
+            
+            print("[DEBUG] full screen: \(fullImage.width)x\(fullImage.height)")
             
             let screenFrame = NSScreen.main!.frame
-            let scaleX = CGFloat(displayImage.width) / screenFrame.width
-            let scaleY = CGFloat(displayImage.height) / screenFrame.height
+            print("[DEBUG] screen frame: \(screenFrame)")
+            
+            let scaleX = CGFloat(fullImage.width) / screenFrame.width
+            let scaleY = CGFloat(fullImage.height) / screenFrame.height
+            print("[DEBUG] scale: \(scaleX)x\(scaleY)")
             
             // Convert SwiftUI rect to CG coordinates
             let cropRect = CGRect(
@@ -107,7 +120,7 @@ final class ScreenCaptureManager {
             )
             print("[DEBUG] cropRect: \(cropRect)")
             
-            guard let cropped = displayImage.cropping(to: cropRect) else {
+            guard let cropped = fullImage.cropping(to: cropRect) else {
                 print("[DEBUG] crop failed")
                 completion?(.failure(.captureFailed))
                 return

@@ -20,6 +20,7 @@
 		E1000001 /* ImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000001; };
 		E1000002 /* TranslationRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000002; };
 		E1000003 /* RendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000003; };
+		F1000001 /* ConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000001; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,6 +49,7 @@
 		E2000001 /* ImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUtils.swift; sourceTree = "<group>"; };
 		E2000002 /* TranslationRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationRenderer.swift; sourceTree = "<group>"; };
 		E2000003 /* RendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RendererTests.swift; sourceTree = "<group>"; };
+		F2000001 /* ConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,6 +85,7 @@
 				A2000001 /* ImageTranslatorApp.swift */,
 				A4000003 /* App */,
 				B4000001 /* Modules */,
+				F4000001 /* Services */,
 				E4000001 /* Utils */,
 				A4000004 /* Resources */,
 			);
@@ -157,6 +160,14 @@
 				E2000002 /* TranslationRenderer.swift */,
 			);
 			path = Renderer;
+			sourceTree = "<group>";
+		};
+		F4000001 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				F2000001 /* ConfigManager.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 		C4000001 /* ImageTranslatorTests */ = {
@@ -277,6 +288,7 @@
 				D1000004 /* TranslatorFactory.swift in Sources */,
 				E1000001 /* ImageUtils.swift in Sources */,
 				E1000002 /* TranslationRenderer.swift in Sources */,
+				F1000001 /* ConfigManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

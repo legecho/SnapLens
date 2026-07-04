@@ -21,6 +21,60 @@ enum CaptureError: Error, LocalizedError {
     }
 }
 
+class OverlayWindow: NSWindow {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+}
+
+final class ScreenCaptureManager {
+    static let shared = ScreenCaptureManager()
+
+    private var overlayWindow: OverlayWindow?
+    private var captureCompletion: ((Result<CGImage, CaptureError>) -> Void)?
+    private init() {}
+
+    func startCapture(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
+        print("[DEBUG] startCapture called")
+        DispatchQueue.main.async {
+            print("[DEBUG] showing overlay directly (skipping permission check)")
+            self.showOverlay(completion: completion)
+        }
+    }
+
+    private func showOverlay(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
+        captureCompletion = completion
+
+        let overlayView = CaptureOverlayView(
+            onSelectionComplete: { [weak self] rect in
+                self?.captureRegion(rect)
+            },
+            onCancel: { [weak self] in
+                self?.cleanup()
+                self?.captureCompletion?(.failure(.invalidRegion))
+            }
+        )
+
+        let hostingController = NSHostingController(rootView: overlayView)
+        hostingController.view.wantsLayer = true
+        hostingController.view.layer?.backgroundColor = NSColor.clear.cgColor
+
+        let window = OverlayWindow(
+            contentRect: NSScreen.main?.frame ?? .zero,
+            styleMask: .borderless,
+            backing: .buffered,
+            defer: false
+        )
+        window.level = .screenSaver
+        window.contentView = hostingController.view
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.makeKeyAndOrderFront(nil)
+
+        overlayWindow = window
+    }
+    }
+}
+
 final class ScreenCaptureManager {
     static let shared = ScreenCaptureManager()
 

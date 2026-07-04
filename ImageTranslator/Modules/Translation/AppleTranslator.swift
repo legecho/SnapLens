@@ -53,15 +53,6 @@ final class AppleTranslator: TranslationProvider {
         }
     }
 
-    func translateBatch(_ texts: [String], from sourceLang: String, to targetLang: String) async throws -> [String] {
-        var results: [String] = []
-        for text in texts {
-            let translated = try await translate(text, from: sourceLang, to targetLang)
-            results.append(translated)
-        }
-        return results
-    }
-
     private func mapLanguageCode(_ code: String) -> String {
         switch code {
         case "zh-CN", "zh-Hans": return "zh-Hans"

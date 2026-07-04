@@ -93,7 +93,6 @@ final class ScreenCaptureManager {
                 // 3. 配置截图参数
                 let config = SCStreamConfiguration()
                 config.pixelFormat = kCVPixelFormatType_32BGRA
-                config.colorSpace = CGColorSpaceCreateDeviceRGB()
 
                 // 根据选区设置裁剪范围（像素坐标）
                 let screenFrame = NSScreen.main?.frame ?? .zero

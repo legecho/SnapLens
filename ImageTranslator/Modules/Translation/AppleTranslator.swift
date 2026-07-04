@@ -1,14 +1,23 @@
 import Foundation
 import Translation
 
-@available(macOS 13.0, *)
 final class AppleTranslator: TranslationProvider {
     let name = "Apple"
 
     func translate(_ text: String, from sourceLang: String, to targetLang: String) async throws -> String {
+        if #available(macOS 26.0, *) {
+            return try await translateNew(text, from: sourceLang, to: targetLang)
+        } else if #available(macOS 13.0, *) {
+            return try await translateOld(text, from: sourceLang, to: targetLang)
+        } else {
+            throw TranslationError.engineNotAvailable("Apple Translation requires macOS 13+")
+        }
+    }
+
+    @available(macOS 26.0, *)
+    private func translateNew(_ text: String, from sourceLang: String, to targetLang: String) async throws -> String {
         let source = Locale.Language(identifier: mapLanguageCode(sourceLang))
         let target = Locale.Language(identifier: mapLanguageCode(targetLang))
-
         let session = TranslationSession(installedSource: source, target: target)
 
         return try await withCheckedThrowingContinuation { continuation in
@@ -25,10 +34,29 @@ final class AppleTranslator: TranslationProvider {
         }
     }
 
+    @available(macOS 13.0, *)
+    private func translateOld(_ text: String, from sourceLang: String, to targetLang: String) async throws -> String {
+        let source = Locale.Language(identifier: mapLanguageCode(sourceLang))
+        let target = Locale.Language(identifier: mapLanguageCode(targetLang))
+        let session = TranslationSession()
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let request = TranslationSession.Translatable(text)
+            session.translate(request, sourceLanguage: source, targetLanguage: target) { result in
+                switch result {
+                case .success(let response):
+                    continuation.resume(returning: response.targetString)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
     func translateBatch(_ texts: [String], from sourceLang: String, to targetLang: String) async throws -> [String] {
         var results: [String] = []
         for text in texts {
-            let translated = try await translate(text, from: sourceLang, to: targetLang)
+            let translated = try await translate(text, from: sourceLang, to targetLang)
             results.append(translated)
         }
         return results

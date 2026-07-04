@@ -32,15 +32,60 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func handleHotKey() {
-        print("[DEBUG] Hotkey received")
-        // Show popover first, then trigger translation
-        DispatchQueue.main.async {
-            self.showPopover()
-            // Small delay to ensure popover is visible
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                NotificationCenter.default.post(name: .hotKeyTriggered, object: nil)
+        print("[DEBUG] Hotkey received, starting capture")
+        
+        // Check permission first
+        guard CGPreflightScreenCaptureAccess() else {
+            print("[DEBUG] Permission not granted")
+            return
+        }
+        
+        // Start capture directly
+        ScreenCaptureManager.shared.startCapture { [weak self] result in
+            switch result {
+            case .success(let image):
+                print("[DEBUG] Capture success, processing...")
+                self?.processCapturedImage(image)
+            case .failure(let error):
+                print("[DEBUG] Capture failed: \(error)")
             }
         }
+    }
+    
+    private func processCapturedImage(_ image: CGImage) {
+        let ocrProvider = VisionOCR()
+        let renderer = TranslationRenderer()
+        let config = ConfigManager.shared
+        
+        Task {
+            do {
+                let textBlocks = try await ocrProvider.recognize(image: image)
+                let texts = textBlocks.map { $0.text }
+                let translations = try await config.getTranslator().translateBatch(
+                    texts,
+                    from: "auto",
+                    to: config.targetLanguage
+                )
+                
+                if let rendered = renderer.render(originalImage: image, textBlocks: textBlocks, translations: translations) {
+                    let nsImage = NSImage(cgImage: rendered, size: NSSize(width: rendered.width, height: rendered.height))
+                    
+                    // Show popover with result
+                    await MainActor.run {
+                        self.showResultPopover(image: nsImage)
+                    }
+                }
+            } catch {
+                print("[DEBUG] Processing error: \(error)")
+            }
+        }
+    }
+    
+    private func showResultPopover(image: NSImage) {
+        // Create a result view
+        let resultView = TranslationResultView(image: image)
+        popover.contentViewController = NSHostingController(rootView: resultView)
+        showPopover()
     }
 
     private func setupStatusItem() {

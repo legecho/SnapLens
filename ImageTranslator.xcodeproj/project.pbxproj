@@ -25,7 +25,6 @@
 		G1000001 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000001 /* MenuBarView.swift */; };
 		G1000002 /* CaptureOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000002 /* CaptureOverlayView.swift */; };
 		G1000003 /* ScreenCaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000003 /* ScreenCaptureManager.swift */; };
-		G1000004 /* TranslationResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000004 /* TranslationResultView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,10 +56,6 @@
 		E2000003 /* RendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RendererTests.swift; sourceTree = "<group>"; };
 		F2000001 /* ConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigManager.swift; sourceTree = "<group>"; };
 		F2000006 /* HotKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyManager.swift; sourceTree = "<group>"; };
-		G2000001 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
-		G2000002 /* CaptureOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureOverlayView.swift; sourceTree = "<group>"; };
-		G2000003 /* ScreenCaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureManager.swift; sourceTree = "<group>"; };
-		G2000004 /* TranslationResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationResultView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -107,9 +102,9 @@
 			isa = PBXGroup;
 			children = (
 				A2000002 /* AppDelegate.swift */,
+				A2000001 /* ImageTranslatorApp.swift */,
 				G2000001 /* MenuBarView.swift */,
 				A2000005 /* SettingsView.swift */,
-				G2000004 /* TranslationResultView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -318,7 +313,6 @@
 				F1000001 /* ConfigManager.swift in Sources */,
 				F1000002 /* HotKeyManager.swift in Sources */,
 				A1000004 /* SettingsView.swift in Sources */,
-				G1000004 /* TranslationResultView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -77,101 +77,45 @@ final class ScreenCaptureManager {
     private func captureRegion(_ rect: CGRect) {
         print("[DEBUG] captureRegion called with rect: \(rect)")
         
-        // Convert rect from SwiftUI (top-left origin) to CG (bottom-left origin)
-        let screenHeight = NSScreen.main!.frame.height
-        let cgRect = CGRect(
-            x: rect.origin.x,
-            y: screenHeight - rect.origin.y - rect.height,
-            width: rect.width,
-            height: rect.height
-        )
-        print("[DEBUG] cgRect: \(cgRect)")
-        
-        // Capture the specific region directly - overlay is semi-transparent so content shows through
-        // Use a small delay to ensure the overlay has rendered
+        // Capture full screen then crop
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            guard let image = CGWindowListCreateImage(
-                cgRect,
-                .optionOnScreenOnly,
-                kCGNullWindowID,
-                [.boundsIgnoreFraming, .nominalResolution, .bestResolution]
-            ) else {
-                print("[DEBUG] CGWindowListCreateImage failed, trying fallback")
-                // Fallback: capture full display and crop
-                guard let fullImage = CGDisplayCreateImage(CGMainDisplayID()) else {
-                    print("[DEBUG] fallback failed too")
-                    let completion = self.captureCompletion
-                    self.cleanup()
-                    completion?(.failure(.captureFailed))
-                    return
-                }
-                
-                // Calculate crop coordinates for full display image
-                let displayWidth = CGFloat(fullImage.width)
-                let displayHeight = CGFloat(fullImage.height)
-                let scaleX = displayWidth / NSScreen.main!.frame.width
-                let scaleY = displayHeight / NSScreen.main!.frame.height
-                
-                let cropRect = CGRect(
-                    x: rect.origin.x * scaleX,
-                    y: (NSScreen.main!.frame.height - rect.origin.y - rect.height) * scaleY,
-                    width: rect.width * scaleX,
-                    height: rect.height * scaleY
-                )
-                print("[DEBUG] fallback cropRect: \(cropRect)")
-                
-                guard let cropped = fullImage.cropping(to: cropRect) else {
-                    let completion = self.captureCompletion
-                    self.cleanup()
-                    completion?(.failure(.captureFailed))
-                    return
-                }
-                
-                print("[DEBUG] fallback success: \(cropped.width)x\(cropped.height)")
+            guard let fullImage = CGDisplayCreateImage(CGMainDisplayID()) else {
+                print("[DEBUG] failed to capture display")
                 let completion = self.captureCompletion
                 self.cleanup()
-                completion?(.success(cropped))
+                completion?(.failure(.captureFailed))
                 return
             }
             
-            print("[DEBUG] capture success: \(image.width)x\(image.height)")
+            print("[DEBUG] full screen: \(fullImage.width)x\(fullImage.height)")
+            
+            // Scale factor (Retina = 2x)
+            let screenFrame = NSScreen.main!.frame
+            let scaleX = CGFloat(fullImage.width) / screenFrame.width
+            let scaleY = CGFloat(fullImage.height) / screenFrame.height
+            
+            // Convert SwiftUI rect (top-left origin) to CG rect (bottom-left origin)
+            let cropRect = CGRect(
+                x: rect.origin.x * scaleX,
+                y: (screenFrame.height - rect.origin.y - rect.height) * scaleY,
+                width: rect.width * scaleX,
+                height: rect.height * scaleY
+            )
+            print("[DEBUG] cropRect: \(cropRect)")
+            
+            guard let cropped = fullImage.cropping(to: cropRect) else {
+                print("[DEBUG] failed to crop")
+                let completion = self.captureCompletion
+                self.cleanup()
+                completion?(.failure(.captureFailed))
+                return
+            }
+            
+            print("[DEBUG] capture success: \(cropped.width)x\(cropped.height)")
             let completion = self.captureCompletion
             self.cleanup()
-            completion?(.success(image))
+            completion?(.success(cropped))
         }
-    }
-                // Crop the fallback image
-                let cropScale = CGFloat(displayImage.width) / NSScreen.main!.frame.width
-                let fallbackCrop = CGRect(
-                    x: rect.origin.x * cropScale,
-                    y: (screenHeight - rect.origin.y - rect.height) * cropScale,
-                    width: rect.width * cropScale,
-                    height: rect.height * cropScale
-                )
-                if let cropped = displayImage.cropping(to: fallbackCrop) {
-                    print("[DEBUG] fallback capture success, size: \(cropped.width)x\(cropped.height)")
-                    completion?(.success(cropped))
-                } else {
-                    completion?(.failure(.captureFailed))
-                }
-                return
-            }
-            
-            print("[DEBUG] capture success, size: \(image.width)x\(image.height)")
-            completion?(.success(image))
-        }
-    }
-
-    private func displayContainingPoint(_ point: CGPoint) -> CGDirectDisplayID {
-        var activeDisplays = [CGDirectDisplayID](repeating: 0, count: 16)
-        var displayCount: UInt32 = 0
-        CGGetActiveDisplayList(16, &activeDisplays, &displayCount)
-
-        for i in 0..<Int(displayCount) {
-            let bounds = CGDisplayBounds(activeDisplays[i])
-            if bounds.contains(point) { return activeDisplays[i] }
-        }
-        return CGMainDisplayID()
     }
 
     private func cleanup() {

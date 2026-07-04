@@ -94,11 +94,11 @@ final class ScreenCaptureManager {
                 let fullImage = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
                 print("[DEBUG] full screen: \(fullImage.width)x\(fullImage.height)")
 
-                // 手动裁剪选区
+                // 手动裁剪选区（ScreenCaptureKit 和 SwiftUI 都是 (0,0) 在左上角，无需翻转）
                 let scale = NSScreen.main?.backingScaleFactor ?? 2.0
                 let cropRect = CGRect(
                     x: rect.origin.x * scale,
-                    y: (CGFloat(fullImage.height) / scale - rect.origin.y - rect.height) * scale,
+                    y: rect.origin.y * scale,
                     width: rect.width * scale,
                     height: rect.height * scale
                 )

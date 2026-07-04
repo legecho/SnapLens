@@ -12,7 +12,7 @@ enum CaptureError: Error, LocalizedError {
         case .noScreen:
             return "No screen available for capture."
         case .permissionDenied:
-            return "Screen capture permission required. Open System Settings > Privacy & Security > Screen Recording, enable this app, then try again."
+            return "需要屏幕录制权限。请打开系统设置 > 隐私与安全性 > 屏幕录制，开启 ImageTranslator，然后重启 App 再试。"
         case .captureFailed:
             return "Failed to capture screen. Please try again."
         case .invalidRegion:
@@ -30,19 +30,9 @@ final class ScreenCaptureManager {
 
     func startCapture(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
         print("[DEBUG] startCapture called")
-        checkPermission { [weak self] granted in
-            print("[DEBUG] permission granted: \(granted)")
-            guard granted else {
-                DispatchQueue.main.async {
-                    completion(.failure(.permissionDenied))
-                }
-                return
-            }
-
-            DispatchQueue.main.async {
-                print("[DEBUG] showing overlay")
-                self?.showOverlay(completion: completion)
-            }
+        DispatchQueue.main.async {
+            print("[DEBUG] showing overlay directly (skipping permission check)")
+            self.showOverlay(completion: completion)
         }
     }
 
@@ -94,10 +84,11 @@ final class ScreenCaptureManager {
         print("[DEBUG] target display: \(targetDisplay)")
 
         guard let image = CGDisplayCreateImage(targetDisplay) else {
-            print("[DEBUG] failed to create display image")
+            print("[DEBUG] failed to create display image - likely permission issue")
+            CGRequestScreenCaptureAccess()
             let completion = captureCompletion
             cleanup()
-            completion?(.failure(.captureFailed))
+            completion?(.failure(.permissionDenied))
             return
         }
 

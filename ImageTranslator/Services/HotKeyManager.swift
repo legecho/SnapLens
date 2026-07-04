@@ -3,7 +3,7 @@ import Carbon.HIToolbox
 
 final class HotKeyManager {
     static let shared = HotKeyManager()
-    static let hotKeyTriggeredNotification = Notification.Name("HotKeyTriggered")
+    static let hotKeyTriggeredNotification = Notification.Name("com.mimo.imagetranslator.hotKeyTriggered")
 
     private var hotKeyRef: EventHotKeyRef?
     private var eventHandlerRef: EventHandlerRef?
@@ -34,9 +34,7 @@ final class HotKeyManager {
             return
         }
 
-        let ctrlKey = UInt32(controlKey) << 8
-        let cmdKey = UInt32(cmdKey) << 8
-        let modifiers = ctrlKey | cmdKey
+        let modifiers = UInt32(controlKey) | UInt32(cmdKey)
 
         let registerStatus = RegisterEventHotKey(
             UInt32(kVK_ANSI_T),

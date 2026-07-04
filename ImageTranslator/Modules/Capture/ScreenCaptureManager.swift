@@ -69,6 +69,8 @@ final class ScreenCaptureManager {
         window.contentView = hostingController.view
         window.isOpaque = false
         window.backgroundColor = .clear
+        // 关键：让窗口跟随当前活跃的桌面空间
+        window.collectionBehavior = [.canJoinAllSpaces, .stationary]
         window.makeKeyAndOrderFront(nil)
 
         overlayWindow = window

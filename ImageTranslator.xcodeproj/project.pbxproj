@@ -26,7 +26,6 @@
 		G1000002 /* CaptureOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000002 /* CaptureOverlayView.swift */; };
 		G1000003 /* ScreenCaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000003 /* ScreenCaptureManager.swift */; };
 		G1000004 /* TranslationResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000004 /* TranslationResultView.swift */; };
-		G1000005 /* ScreenCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000005 /* ScreenCaptureView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,7 +61,6 @@
 		G2000002 /* CaptureOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureOverlayView.swift; sourceTree = "<group>"; };
 		G2000003 /* ScreenCaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureManager.swift; sourceTree = "<group>"; };
 		G2000004 /* TranslationResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationResultView.swift; sourceTree = "<group>"; };
-		G2000005 /* ScreenCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,7 +110,6 @@
 				G2000001 /* MenuBarView.swift */,
 				A2000005 /* SettingsView.swift */,
 				G2000004 /* TranslationResultView.swift */,
-				G2000005 /* ScreenCaptureView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -322,7 +319,6 @@
 				F1000002 /* HotKeyManager.swift in Sources */,
 				A1000004 /* SettingsView.swift in Sources */,
 				G1000004 /* TranslationResultView.swift in Sources */,
-				G1000005 /* ScreenCaptureView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

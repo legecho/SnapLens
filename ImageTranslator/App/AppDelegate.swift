@@ -15,12 +15,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
         setupPopover()
-        
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             HotKeyManager.shared.register()
-            print("[DEBUG] App initialized, hotkey registered")
         }
-        
+
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleHotKey),
@@ -34,38 +33,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func handleHotKey() {
-        print("[DEBUG] Hotkey received")
         startCapture()
     }
-    
+
     func startCapture() {
         print("[DEBUG] Starting capture")
-        
-        // 1. 先截全屏
         guard let fullImage = ScreenCaptureManager.shared.captureFullScreen() else {
-            print("[DEBUG] Failed to capture screen")
+            print("[DEBUG] Capture failed")
             return
         }
-        
-        // 2. 保存调试图片
         ScreenCaptureManager.shared.saveDebugImage(fullImage, prefix: "fullscreen")
-        
-        // 3. 显示截图窗口让用户选区
         showCaptureWindow(fullImage)
     }
-    
+
     private func showCaptureWindow(_ image: CGImage) {
         let captureView = ScreenCaptureView(
             fullImage: image,
             onRegionSelected: { [weak self] rect in
                 self?.closeCaptureWindow()
-                self?.processRegion(image, rect: rect)
+                if let cropped = ScreenCaptureManager.shared.cropImage(image, rect: rect) {
+                    ScreenCaptureManager.shared.saveDebugImage(cropped, prefix: "cropped")
+                    self?.processCapturedImage(cropped)
+                }
             },
             onCancel: { [weak self] in
                 self?.closeCaptureWindow()
             }
         )
-        
+
         let window = OverlayWindow(
             contentRect: NSScreen.main?.frame ?? .zero,
             styleMask: .borderless,
@@ -78,36 +73,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.backgroundColor = .clear
         window.collectionBehavior = [.canJoinAllSpaces, .stationary]
         window.makeKeyAndOrderFront(nil)
-        
         captureWindow = window
     }
-    
+
     private func closeCaptureWindow() {
         captureWindow?.orderOut(nil)
         captureWindow = nil
-    }
-    
-    private func processRegion(_ fullImage: CGImage, rect: CGRect) {
-        print("[DEBUG] Processing region: \(rect)")
-        
-        // 裁剪选区
-        guard let cropped = fullImage.cropping(to: rect) else {
-            print("[DEBUG] Failed to crop")
-            return
-        }
-        
-        print("[DEBUG] Cropped: \(cropped.width)x\(cropped.height)")
-        ScreenCaptureManager.shared.saveDebugImage(cropped, prefix: "cropped")
-        
-        // OCR + 翻译
-        processCapturedImage(cropped)
     }
 
     private func processCapturedImage(_ image: CGImage) {
         let ocrProvider = VisionOCR()
         let renderer = TranslationRenderer()
         let config = ConfigManager.shared
-        
+
         Task {
             do {
                 let textBlocks = try await ocrProvider.recognize(image: image)
@@ -117,7 +95,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     from: "auto",
                     to: config.targetLanguage
                 )
-                
                 if let rendered = renderer.render(originalImage: image, textBlocks: textBlocks, translations: translations) {
                     let nsImage = NSImage(cgImage: rendered, size: NSSize(width: rendered.width, height: rendered.height))
                     await MainActor.run {
@@ -125,26 +102,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
             } catch {
-                print("[DEBUG] Processing error: \(error)")
+                print("[DEBUG] Error: \(error)")
             }
         }
     }
-    
+
     private func showResultPopover(image: NSImage) {
-        let resultView = TranslationResultView(image: image)
-        popover.contentViewController = NSHostingController(rootView: resultView)
+        popover.contentViewController = NSHostingController(rootView: TranslationResultView(image: image))
         showPopover()
     }
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-
         if let button = statusItem.button {
-            if let sfSymbol = NSImage(systemSymbolName: "translate", accessibilityDescription: "ImageTranslator") {
-                button.image = sfSymbol
-            } else {
-                button.title = "T"
-            }
+            button.image = NSImage(systemSymbolName: "translate", accessibilityDescription: "ImageTranslator")
             button.action = #selector(togglePopover)
             button.target = self
         }
@@ -154,7 +125,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         popover = NSPopover()
         popover.contentSize = NSSize(width: 300, height: 200)
         popover.behavior = .transient
-        popover.animates = true
         popover.contentViewController = NSHostingController(rootView: MenuBarView())
     }
 
@@ -162,37 +132,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard let button = statusItem.button else { return }
         if !popover.isShown {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.makeKey()
         }
     }
 
     @objc func togglePopover() {
-        if popover.isShown {
-            popover.performClose(nil)
-        } else {
-            showPopover()
-        }
+        popover.isShown ? popover.performClose(nil) : showPopover()
     }
 
     func openSettings() {
         if let existing = settingsWindow, existing.isVisible {
             existing.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
             return
         }
-
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 450, height: 320),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
-        window.title = "ImageTranslator Settings"
+        window.title = "Settings"
         window.contentView = NSHostingView(rootView: SettingsView())
         window.center()
         window.isReleasedWhenClosed = false
         window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
         settingsWindow = window
     }
 }

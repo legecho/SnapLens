@@ -36,17 +36,9 @@ final class ScreenCaptureManager {
     }
 
     func cropImage(_ image: CGImage, rect: CGRect) -> CGImage? {
-        let screenFrame = NSScreen.main!.frame
-        let scaleX = CGFloat(image.width) / screenFrame.width
-        let scaleY = CGFloat(image.height) / screenFrame.height
-
-        let cropRect = CGRect(
-            x: rect.origin.x * scaleX,
-            y: (screenFrame.height - rect.origin.y - rect.height) * scaleY,
-            width: rect.width * scaleX,
-            height: rect.height * scaleY
-        )
-        return image.cropping(to: cropRect)
+        // rect 已经是图片像素坐标，直接裁剪
+        print("[DEBUG] cropImage: \(rect)")
+        return image.cropping(to: rect)
     }
 
     func saveDebugImage(_ image: CGImage, prefix: String) {

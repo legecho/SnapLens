@@ -34,13 +34,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func handleHotKey() {
         print("[DEBUG] Hotkey received, starting capture")
         
-        // Check permission first
-        guard CGPreflightScreenCaptureAccess() else {
-            print("[DEBUG] Permission not granted")
-            return
-        }
-        
-        // Start capture directly
+        // Start capture directly - permission check happens during capture
         ScreenCaptureManager.shared.startCapture { [weak self] result in
             switch result {
             case .success(let image):

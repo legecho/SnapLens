@@ -105,13 +105,20 @@ final class ScreenCaptureManager {
                 }
 
                 // 手动裁剪选区
-                let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+                // 使用实际显示尺寸计算缩放比例
+                let displayWidth = CGFloat(display.width)
+                let displayHeight = CGFloat(display.height)
+                let screenFrame = NSScreen.main?.frame ?? .zero
+                let scaleX = displayWidth / screenFrame.width
+                let scaleY = displayHeight / screenFrame.height
+                
                 let cropRect = CGRect(
-                    x: rect.origin.x * scale,
-                    y: rect.origin.y * scale,
-                    width: rect.width * scale,
-                    height: rect.height * scale
+                    x: rect.origin.x * scaleX,
+                    y: rect.origin.y * scaleY,
+                    width: rect.width * scaleX,
+                    height: rect.height * scaleY
                 )
+                print("[DEBUG] screenFrame: \(screenFrame), displaySize: \(displayWidth)x\(displayHeight), scale: \(scaleX)x\(scaleY)")
                 print("[DEBUG] cropRect: \(cropRect)")
 
                 guard let cropped = fullImage.cropping(to: cropRect) else {

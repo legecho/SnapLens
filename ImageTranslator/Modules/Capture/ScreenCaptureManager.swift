@@ -105,12 +105,10 @@ final class ScreenCaptureManager {
                 }
 
                 // 手动裁剪选区
-                // ScreenCaptureKit 使用 Core Graphics 坐标系（左下角为原点），需要翻转 Y
                 let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-                let screenHeight = NSScreen.main?.frame.height ?? 1080
                 let cropRect = CGRect(
                     x: rect.origin.x * scale,
-                    y: (screenHeight - rect.origin.y - rect.height) * scale,
+                    y: rect.origin.y * scale,
                     width: rect.width * scale,
                     height: rect.height * scale
                 )

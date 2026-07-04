@@ -77,39 +77,46 @@ final class ScreenCaptureManager {
     private func captureRegion(_ rect: CGRect) {
         print("[DEBUG] captureRegion called with rect: \(rect)")
         
-        // Use CGWindowListCreateImage to capture the specific region
-        // This avoids coordinate conversion issues
-        let screenRect = NSScreen.main!.frame
-        print("[DEBUG] screen frame: \(screenRect)")
-        
-        // Convert rect from SwiftUI coordinates (top-left origin) to CG coordinates (bottom-left origin)
-        let cgRect = CGRect(
-            x: rect.origin.x,
-            y: screenRect.height - rect.origin.y - rect.height,
-            width: rect.width,
-            height: rect.height
-        )
-        print("[DEBUG] cgRect: \(cgRect)")
-        
-        // Capture the specific region using CGWindowListCreateImage
-        guard let image = CGWindowListCreateImage(
-            cgRect,
-            .optionOnScreenOnly,
-            kCGNullWindowID,
-            [.boundsIgnoreFraming, .nominalResolution]
-        ) else {
-            print("[DEBUG] failed to capture region")
-            let completion = captureCompletion
-            cleanup()
-            completion?(.failure(.captureFailed))
-            return
-        }
-
+        // Save completion before cleanup
         let completion = captureCompletion
-        cleanup()
-
-        print("[DEBUG] capture success, size: \(image.width)x\(image.height)")
-        completion?(.success(image))
+        
+        // Close overlay first so it doesn't appear in screenshot
+        overlayWindow?.orderOut(nil)
+        overlayWindow = nil
+        captureCompletion = nil
+        
+        // Small delay to ensure overlay is gone
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Capture full screen
+            guard let displayID = CGMainDisplayID().description.isEmpty ? nil : CGMainDisplayID(),
+                  let fullImage = CGDisplayCreateImage(displayID) else {
+                print("[DEBUG] failed to capture display")
+                completion?(.failure(.captureFailed))
+                return
+            }
+            
+            print("[DEBUG] full screen captured: \(fullImage.width)x\(fullImage.height)")
+            
+            // Convert rect from SwiftUI (top-left origin) to CG (bottom-left origin)
+            let screenHeight = CGFloat(fullImage.height)
+            let cropRect = CGRect(
+                x: rect.origin.x * 2,  // Retina 2x
+                y: screenHeight - (rect.origin.y + rect.height) * 2,
+                width: rect.width * 2,
+                height: rect.height * 2
+            )
+            print("[DEBUG] cropRect: \(cropRect)")
+            
+            // Crop the image
+            guard let croppedImage = fullImage.cropping(to: cropRect) else {
+                print("[DEBUG] failed to crop")
+                completion?(.failure(.captureFailed))
+                return
+            }
+            
+            print("[DEBUG] capture success, size: \(croppedImage.width)x\(croppedImage.height)")
+            completion?(.success(croppedImage))
+        }
     }
 
     private func displayContainingPoint(_ point: CGPoint) -> CGDirectDisplayID {

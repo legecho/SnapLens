@@ -1,5 +1,6 @@
 import Cocoa
 import SwiftUI
+import ScreenCaptureKit
 
 enum CaptureError: Error {
     case permissionDenied
@@ -7,6 +8,7 @@ enum CaptureError: Error {
     case invalidRegion
 }
 
+@available(macOS 14.0, *)
 final class ScreenCaptureManager {
     static let shared = ScreenCaptureManager()
 
@@ -22,7 +24,6 @@ final class ScreenCaptureManager {
                 }
                 return
             }
-
             DispatchQueue.main.async {
                 self?.showOverlay(completion: completion)
             }
@@ -30,11 +31,13 @@ final class ScreenCaptureManager {
     }
 
     private func checkPermission(completion: @escaping (Bool) -> Void) {
-        if CGPreflightScreenCaptureAccess() {
-            completion(true)
-        } else {
-            CGRequestScreenCaptureAccess()
-            completion(false)
+        Task {
+            do {
+                let _ = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+                completion(true)
+            } catch {
+                completion(false)
+            }
         }
     }
 
@@ -72,8 +75,7 @@ final class ScreenCaptureManager {
 
     private func captureRegion(_ rect: CGRect) {
         print("[DEBUG] captureRegion rect (points): \(rect)")
-        
-        // Retina: CGDisplayCreateImage 返回像素，rect 是点坐标，需要乘以 scale
+
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         let scaledRect = CGRect(
             x: rect.origin.x * scale,
@@ -82,40 +84,42 @@ final class ScreenCaptureManager {
             height: rect.height * scale
         )
         print("[DEBUG] scaled rect (pixels): \(scaledRect), scale: \(scale)")
-        
-        let midPoint = CGPoint(x: rect.midX, y: rect.midY)
-        let targetDisplay = displayContainingPoint(midPoint)
 
-        guard let image = CGDisplayCreateImage(targetDisplay) else {
-            cleanup()
-            captureCompletion?(.failure(.captureFailed))
-            return
+        Task {
+            do {
+                let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+                guard let display = content.displays.first else {
+                    cleanup()
+                    captureCompletion?(.failure(.captureFailed))
+                    return
+                }
+
+                let config = SCStreamConfiguration()
+                config.width = Int(display.width)
+                config.height = Int(display.height)
+                config.pixelFormat = kCVPixelFormatType_32BGRA
+                config.colorSpace = CGColorSpaceCreateDeviceRGB()
+
+                let image = try await SCImageManager.captureImage(content: content, configuration: config)
+                print("[DEBUG] captured: \(image.width)x\(image.height)")
+
+                // 裁剪选区
+                guard let cropped = image.cropping(to: scaledRect) else {
+                    cleanup()
+                    captureCompletion?(.failure(.captureFailed))
+                    return
+                }
+
+                print("[DEBUG] cropped: \(cropped.width)x\(cropped.height)")
+                cleanup()
+                captureCompletion?(.success(cropped))
+
+            } catch {
+                print("[DEBUG] capture error: \(error)")
+                cleanup()
+                captureCompletion?(.failure(.captureFailed))
+            }
         }
-        
-        print("[DEBUG] full image: \(image.width)x\(image.height)")
-
-        let croppedImage = image.cropping(to: scaledRect)
-        cleanup()
-
-        guard let cropped = croppedImage else {
-            captureCompletion?(.failure(.captureFailed))
-            return
-        }
-
-        print("[DEBUG] cropped: \(cropped.width)x\(cropped.height)")
-        captureCompletion?(.success(cropped))
-    }
-
-    private func displayContainingPoint(_ point: CGPoint) -> CGDirectDisplayID {
-        var activeDisplays = [CGDirectDisplayID](repeating: 0, count: 16)
-        var displayCount: UInt32 = 0
-        CGGetActiveDisplayList(16, &activeDisplays, &displayCount)
-
-        for i in 0..<Int(displayCount) {
-            let bounds = CGDisplayBounds(activeDisplays[i])
-            if bounds.contains(point) { return activeDisplays[i] }
-        }
-        return CGMainDisplayID()
     }
 
     private func cleanup() {

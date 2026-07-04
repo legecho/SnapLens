@@ -16,21 +16,19 @@ struct MenuBarView: View {
             }
             .disabled(isTranslating)
 
+            if isTranslating {
+                ProgressView()
+                    .progressViewStyle(.linear)
+            }
+
+            Divider()
+
             Button(action: openSettings) {
                 Label("Settings", systemImage: "gear")
             }
 
             Button(action: quitApp) {
                 Label("Quit", systemImage: "power")
-            }
-
-            if isTranslating {
-                HStack {
-                    ProgressView()
-                        .scaleEffect(0.5)
-                    Text("Translating...")
-                        .font(.caption)
-                }
             }
 
             if let error = lastError {

@@ -35,9 +35,6 @@ final class ScreenCaptureManager {
 
     func startCapture(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
         print("[DEBUG] startCapture called")
-        
-        // Don't check permission - just try to capture
-        // If permission is denied, CGDisplayCreateImage will return nil
         DispatchQueue.main.async {
             print("[DEBUG] showing overlay")
             self.showOverlay(completion: completion)
@@ -80,52 +77,69 @@ final class ScreenCaptureManager {
     private func captureRegion(_ rect: CGRect) {
         print("[DEBUG] captureRegion called with rect: \(rect)")
         
-        // Save reference to completion before cleanup
+        // Save completion and close overlay
         let completion = captureCompletion
-        
-        // Close overlay before capturing
         overlayWindow?.orderOut(nil)
         overlayWindow = nil
         captureCompletion = nil
         
-        // Delay to ensure overlay is completely hidden
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            // Capture full screen
-            guard let fullImage = CGDisplayCreateImage(CGMainDisplayID()) else {
-                print("[DEBUG] failed to capture display")
-                completion?(.failure(.captureFailed))
-                return
+        // Wait for overlay to fully disappear
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            // Method 1: Try CGDisplayCreateImage
+            if let displayImage = CGDisplayCreateImage(CGMainDisplayID()) {
+                print("[DEBUG] CGDisplayCreateImage success: \(displayImage.width)x\(displayImage.height)")
+                
+                let screenFrame = NSScreen.main!.frame
+                let scaleX = CGFloat(displayImage.width) / screenFrame.width
+                let scaleY = CGFloat(displayImage.height) / screenFrame.height
+                
+                // Convert SwiftUI rect to CG coordinates
+                let cropRect = CGRect(
+                    x: rect.origin.x * scaleX,
+                    y: (screenFrame.height - rect.origin.y - rect.height) * scaleY,
+                    width: rect.width * scaleX,
+                    height: rect.height * scaleY
+                )
+                print("[DEBUG] cropRect: \(cropRect)")
+                
+                if let cropped = displayImage.cropping(to: cropRect) {
+                    print("[DEBUG] crop success: \(cropped.width)x\(cropped.height)")
+                    completion?(.success(cropped))
+                    return
+                }
             }
             
-            print("[DEBUG] full screen: \(fullImage.width)x\(fullImage.height)")
-            
-            // Get screen frame in points
-            let screenFrame = NSScreen.main!.frame
-            
-            // Calculate scale factor (Retina = 2x)
-            let scaleX = CGFloat(fullImage.width) / screenFrame.width
-            let scaleY = CGFloat(fullImage.height) / screenFrame.height
-            
-            // Convert rect from SwiftUI coordinates to CG coordinates
-            // SwiftUI: (0,0) at top-left, Y increases downward
-            // CG: (0,0) at bottom-left, Y increases upward
-            let cropRect = CGRect(
-                x: rect.origin.x * scaleX,
-                y: (screenFrame.height - rect.origin.y - rect.height) * scaleY,
-                width: rect.width * scaleX,
-                height: rect.height * scaleY
-            )
-            print("[DEBUG] cropRect: \(cropRect)")
-            
-            // Crop the image
-            guard let cropped = fullImage.cropping(to: cropRect) else {
-                print("[DEBUG] failed to crop")
-                completion?(.failure(.captureFailed))
-                return
+            // Method 2: Try NSScreen bitmap
+            print("[DEBUG] Trying NSScreen bitmap capture")
+            if let screen = NSScreen.main,
+               let bitmap = screen.bitmapImageRep(forCachingDisplay(in: screen.frame)) {
+                screen.cacheDisplay(in: screen.frame, to: bitmap)
+                
+                let cgImage = bitmap.cgImage(forProposedRect: nil, context: nil, hints: nil)
+                if let cgImage = cgImage {
+                    print("[DEBUG] NSScreen bitmap success: \(cgImage.width)x\(cgImage.height)")
+                    
+                    let screenFrame = screen.frame
+                    let scaleX = CGFloat(cgImage.width) / screenFrame.width
+                    let scaleY = CGFloat(cgImage.height) / screenFrame.height
+                    
+                    let cropRect = CGRect(
+                        x: rect.origin.x * scaleX,
+                        y: (screenFrame.height - rect.origin.y - rect.height) * scaleY,
+                        width: rect.width * scaleX,
+                        height: rect.height * scaleY
+                    )
+                    
+                    if let cropped = cgImage.cropping(to: cropRect) {
+                        print("[DEBUG] NSScreen crop success: \(cropped.width)x\(cropped.height)")
+                        completion?(.success(cropped))
+                        return
+                    }
+                }
             }
             
-            print("[DEBUG] capture success: \(cropped.width)x\(cropped.height)")
-            completion?(.success(cropped))
+            print("[DEBUG] All capture methods failed")
+            completion?(.failure(.captureFailed))
         }
     }
 

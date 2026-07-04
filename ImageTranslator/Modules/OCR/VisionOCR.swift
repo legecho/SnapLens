@@ -20,8 +20,8 @@ final class VisionOCR: OCRProvider {
         
         // Save image for debugging
         let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("ocr_debug_\(Int(Date().timeIntervalSince1970)).png")
-        if let nsImage = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height)),
-           let tiffData = nsImage.tiffRepresentation,
+        let nsImage = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+        if let tiffData = nsImage.tiffRepresentation,
            let bitmap = NSBitmapImageRep(data: tiffData),
            let pngData = bitmap.representation(using: .png, properties: [:]) {
             try? pngData.write(to: tempURL)

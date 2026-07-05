@@ -22,3 +22,7 @@ Package.resolved
 
 # Debug
 test/
+
+# Docs & Tests
+docs/
+ImageTranslatorTests/

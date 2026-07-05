@@ -24,7 +24,7 @@ struct SettingsView: View {
             appearanceSection
         }
         .formStyle(.grouped)
-        .frame(width: 450, height: 320)
+        .frame(width: 450, height: 360)
         .alert("Google Cloud Translation API Key", isPresented: $showAPIKeyHelp) {
             Button("OK") {}
         } message: {
@@ -34,6 +34,12 @@ struct SettingsView: View {
 
     private var translationSection: some View {
         Section("Translation") {
+            Picker("Source Language", selection: $config.sourceLanguage) {
+                ForEach(languages, id: \.code) { lang in
+                    Text(lang.name).tag(lang.code)
+                }
+            }
+
             Picker("Target Language", selection: $config.targetLanguage) {
                 ForEach(languages, id: \.code) { lang in
                     Text(lang.name).tag(lang.code)

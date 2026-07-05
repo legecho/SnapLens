@@ -23,11 +23,16 @@ final class ConfigManager: ObservableObject {
     private let defaults = UserDefaults.standard
 
     private enum Keys {
+        static let sourceLanguage = "sourceLanguage"
         static let targetLanguage = "targetLanguage"
         static let translationEngine = "translationEngine"
         static let overlayColor = "overlayColor"
         static let autoTranslate = "autoTranslate"
         static let googleAPIKey = "googleAPIKey"
+    }
+
+    @Published var sourceLanguage: String {
+        didSet { defaults.set(sourceLanguage, forKey: Keys.sourceLanguage) }
     }
 
     @Published var targetLanguage: String {
@@ -53,6 +58,7 @@ final class ConfigManager: ObservableObject {
     private init() {
         let savedEngine = defaults.string(forKey: Keys.translationEngine)
         self.translationEngine = savedEngine.flatMap { TranslationEngine(rawValue: $0) } ?? .apple
+        self.sourceLanguage = defaults.string(forKey: Keys.sourceLanguage) ?? "en"
         self.targetLanguage = defaults.string(forKey: Keys.targetLanguage) ?? "zh-CN"
         self.autoTranslate = defaults.object(forKey: Keys.autoTranslate) as? Bool ?? true
         self.googleAPIKey = defaults.string(forKey: Keys.googleAPIKey)
@@ -66,12 +72,9 @@ final class ConfigManager: ObservableObject {
 
     func getTranslator() -> TranslationProvider {
         do {
-            if #available(macOS 26.0, *) {
-                return try TranslatorFactory.create(engine: translationEngine, apiKey: googleAPIKey)
-            } else {
-                return MockTranslator()
-            }
+            return try TranslatorFactory.create(engine: translationEngine, apiKey: googleAPIKey)
         } catch {
+            print("[DEBUG] TranslatorFactory error: \(error), falling back to MockTranslator")
             return MockTranslator()
         }
     }

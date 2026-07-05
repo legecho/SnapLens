@@ -8,12 +8,15 @@ enum TranslationEngine: String, CaseIterable {
     case localAI = "Local AI"
 }
 
-@available(macOS 26.0, *)
 class TranslatorFactory {
     static func create(engine: TranslationEngine, apiKey: String?) throws -> TranslationProvider {
         switch engine {
         case .apple:
-            return AppleTranslator()
+            if #available(macOS 26.0, *) {
+                return AppleTranslator()
+            } else {
+                throw TranslationError.engineNotAvailable("Apple Translation requires macOS 26 or later")
+            }
         case .google:
             return GoogleTranslator(apiKey: apiKey ?? "")
         case .mock:

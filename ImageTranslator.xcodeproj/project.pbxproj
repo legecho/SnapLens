@@ -22,6 +22,7 @@
 		E1000001 /* ImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000001 /* ImageUtils.swift */; };
 		E1000002 /* TranslationRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000002 /* TranslationRenderer.swift */; };
 		E1000003 /* RendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000003 /* RendererTests.swift */; };
+		E1000004 /* ResultWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2000004 /* ResultWindowManager.swift */; };
 		F1000001 /* ConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000001 /* ConfigManager.swift */; };
 		F1000002 /* HotKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000006 /* HotKeyManager.swift */; };
 		G1000001 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = G2000001 /* MenuBarView.swift */; };
@@ -58,6 +59,7 @@
 		E2000001 /* ImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUtils.swift; sourceTree = "<group>"; };
 		E2000002 /* TranslationRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationRenderer.swift; sourceTree = "<group>"; };
 		E2000003 /* RendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RendererTests.swift; sourceTree = "<group>"; };
+		E2000004 /* ResultWindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultWindowManager.swift; sourceTree = "<group>"; };
 		F2000001 /* ConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigManager.swift; sourceTree = "<group>"; };
 		F2000006 /* HotKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyManager.swift; sourceTree = "<group>"; };
 		G2000001 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
@@ -196,6 +198,7 @@
 			isa = PBXGroup;
 			children = (
 				E2000002 /* TranslationRenderer.swift */,
+				E2000004 /* ResultWindowManager.swift */,
 			);
 			path = Renderer;
 			sourceTree = "<group>";
@@ -321,6 +324,7 @@
 				D1000007 /* AppleTranslator.swift in Sources */,
 				E1000001 /* ImageUtils.swift in Sources */,
 				E1000002 /* TranslationRenderer.swift in Sources */,
+				E1000004 /* ResultWindowManager.swift in Sources */,
 				F1000001 /* ConfigManager.swift in Sources */,
 				F1000002 /* HotKeyManager.swift in Sources */,
 				A1000004 /* SettingsView.swift in Sources */,

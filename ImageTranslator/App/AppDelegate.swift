@@ -29,10 +29,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func handleHotKey() {
-        // 快捷键触发时，先显示弹窗再触发翻译
-        showPopover()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            NotificationCenter.default.post(name: .menuBarStartTranslation, object: nil)
+        ScreenCaptureManager.shared.startCapture { result in
+            switch result {
+            case .success(let captureResult):
+                let cgImage = captureResult.image
+                let logicalSize = NSSize(width: captureResult.screenRect.width, height: captureResult.screenRect.height)
+                let nsImg = NSImage(cgImage: cgImage, size: logicalSize)
+                DispatchQueue.main.async {
+                    ResultWindowManager.shared.show(image: nsImg, near: captureResult.screenRect)
+                }
+            case .failure(let error):
+                print("[DEBUG] hotkey capture failed: \(error)")
+            }
         }
     }
 
@@ -54,7 +62,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         popover = NSPopover()
         popover.contentSize = NSSize(width: 300, height: 200)
         popover.behavior = .transient
-        popover.animates = true
+        popover.animates = false
         popover.contentViewController = NSHostingController(rootView: MenuBarView())
     }
 
@@ -80,7 +88,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 450, height: 320),
+            contentRect: NSRect(x: 0, y: 0, width: 450, height: 360),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false

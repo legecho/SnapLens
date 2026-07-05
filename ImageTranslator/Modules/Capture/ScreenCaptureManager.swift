@@ -9,15 +9,20 @@ enum CaptureError: Error {
     case noDisplayFound
 }
 
+struct CaptureResult {
+    let image: CGImage
+    let screenRect: CGRect
+}
+
 @available(macOS 14.0, *)
-final class ScreenCaptureManager {
+final class ScreenCaptureManager: @unchecked Sendable {
     static let shared = ScreenCaptureManager()
 
     private var overlayWindow: NSWindow?
-    private var captureCompletion: ((Result<CGImage, CaptureError>) -> Void)?
+    private var captureCompletion: ((Result<CaptureResult, CaptureError>) -> Void)?
     private init() {}
 
-    func startCapture(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
+    func startCapture(completion: @escaping (Result<CaptureResult, CaptureError>) -> Void) {
         checkPermission { [weak self] granted in
             guard granted else {
                 DispatchQueue.main.async {
@@ -42,12 +47,13 @@ final class ScreenCaptureManager {
         }
     }
 
-    private func showOverlay(completion: @escaping (Result<CGImage, CaptureError>) -> Void) {
+    private func showOverlay(completion: @escaping (Result<CaptureResult, CaptureError>) -> Void) {
         captureCompletion = completion
+        let screenFrame = NSScreen.main?.frame ?? .zero
 
         let overlayView = CaptureOverlayView(
             onSelectionComplete: { [weak self] rect in
-                self?.captureRegion(rect)
+                self?.captureRegion(rect, screenFrame: screenFrame)
             },
             onCancel: { [weak self] in
                 self?.cleanup()
@@ -60,7 +66,7 @@ final class ScreenCaptureManager {
         hostingController.view.layer?.backgroundColor = NSColor.clear.cgColor
 
         let window = NSWindow(
-            contentRect: NSScreen.main?.frame ?? .zero,
+            contentRect: screenFrame,
             styleMask: .borderless,
             backing: .buffered,
             defer: false
@@ -74,65 +80,69 @@ final class ScreenCaptureManager {
         overlayWindow = window
     }
 
-    private func captureRegion(_ rect: CGRect) {
-        print("[DEBUG] captureRegion rect (points): \(rect)")
+    private func captureRegion(_ rect: CGRect, screenFrame: CGRect) {
+        print("[DEBUG] captureRegion rect: \(rect), screenFrame: \(screenFrame)")
+        // 先隐藏覆盖层，但不清除 captureCompletion
+        DispatchQueue.main.async {
+            self.overlayWindow?.orderOut(nil)
+            self.overlayWindow = nil
+        }
 
         Task {
             do {
                 let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
                 guard let display = content.displays.first else {
-                    cleanup()
                     captureCompletion?(.failure(.noDisplayFound))
                     return
                 }
 
-                // 截全屏，不做 sourceRect
+                // display.width/height 是逻辑点数，需要乘以 scale 得到原生像素
+                let nativeW = display.width
+                let nativeH = display.height
+                let scale = Int(NSScreen.main?.backingScaleFactor ?? 2.0)
+                let pixelW = nativeW * scale
+                let pixelH = nativeH * scale
+                print("[DEBUG] display logical: \(nativeW)x\(nativeH), scale: \(scale), pixel: \(pixelW)x\(pixelH)")
+
                 let filter = SCContentFilter(display: display, excludingWindows: [])
                 let config = SCStreamConfiguration()
+                config.width = pixelW
+                config.height = pixelH
                 config.pixelFormat = kCVPixelFormatType_32BGRA
 
-                let fullImage = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
-                print("[DEBUG] full screen: \(fullImage.width)x\(fullImage.height)")
-                
-                // 保存全屏截图用于调试
-                let debugURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("debug_fullscreen_\(Int(Date().timeIntervalSince1970)).png")
-                let nsImage = NSImage(cgImage: fullImage, size: NSSize(width: fullImage.width, height: fullImage.height))
-                if let tiffData = nsImage.tiffRepresentation,
-                   let bitmap = NSBitmapImageRep(data: tiffData),
-                   let pngData = bitmap.representation(using: .png, properties: [:]) {
-                    try? pngData.write(to: debugURL)
-                    print("[DEBUG] Full screen saved to: \(debugURL.path)")
-                }
+                let fullImage = try await SCScreenshotManager.captureImage(
+                    contentFilter: filter,
+                    configuration: config
+                )
+                print("[DEBUG] captured: \(fullImage.width)x\(fullImage.height)")
 
-                // 手动裁剪选区
-                // 用实际截图尺寸 / 屏幕逻辑尺寸 计算缩放
-                let screenFrame = NSScreen.main!.frame
+                // 用原生像素尺寸做缩放，确保 scaleX == scaleY
                 let scaleX = CGFloat(fullImage.width) / screenFrame.width
                 let scaleY = CGFloat(fullImage.height) / screenFrame.height
-                
+                print("[DEBUG] scale: \(scaleX)x\(scaleY)")
+
                 let cropRect = CGRect(
                     x: rect.origin.x * scaleX,
                     y: rect.origin.y * scaleY,
                     width: rect.width * scaleX,
                     height: rect.height * scaleY
                 )
-                print("[DEBUG] screenFrame: \(screenFrame), image: \(fullImage.width)x\(fullImage.height), scale: \(scaleX)x\(scaleY)")
                 print("[DEBUG] cropRect: \(cropRect)")
 
                 guard let cropped = fullImage.cropping(to: cropRect) else {
-                    cleanup()
                     captureCompletion?(.failure(.captureFailed))
                     return
                 }
 
                 print("[DEBUG] cropped: \(cropped.width)x\(cropped.height)")
-                cleanup()
-                captureCompletion?(.success(cropped))
+                let captureResult = CaptureResult(image: cropped, screenRect: rect)
+                captureCompletion?(.success(captureResult))
+                captureCompletion = nil
 
             } catch {
                 print("[DEBUG] capture error: \(error)")
-                cleanup()
                 captureCompletion?(.failure(.captureFailed))
+                captureCompletion = nil
             }
         }
     }

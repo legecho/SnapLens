@@ -11,7 +11,7 @@ struct RendererConfig {
     static let `default` = RendererConfig(
         overlayColor: .white,
         textColor: .black,
-        fontSizeRatio: 0.75,
+        fontSizeRatio: 0.5,
         padding: 2.0
     )
 }
@@ -23,7 +23,7 @@ final class TranslationRenderer {
         self.config = config
     }
 
-    init(overlayColor: NSColor = .white, textColor: NSColor = .black, fontSizeRatio: CGFloat = 0.75, padding: CGFloat = 2.0) {
+    init(overlayColor: NSColor = .white, textColor: NSColor = .black, fontSizeRatio: CGFloat = 0.5, padding: CGFloat = 2.0) {
         self.config = RendererConfig(
             overlayColor: overlayColor,
             textColor: textColor,
@@ -51,6 +51,10 @@ final class TranslationRenderer {
 
         context.draw(originalImage, in: CGRect(x: 0, y: 0, width: width, height: height))
 
+        // 翻转到左上角原点，与 OCR 坐标系一致
+        context.translateBy(x: 0, y: CGFloat(height))
+        context.scaleBy(x: 1, y: -1)
+
         for (block, translation) in zip(textBlocks, translations) {
             let paddedRect = block.rect.insetBy(dx: -config.padding, dy: -config.padding)
             drawOverlay(in: context, rect: paddedRect)
@@ -67,39 +71,60 @@ final class TranslationRenderer {
     }
 
     private func drawText(in context: CGContext, text: String, rect: CGRect) {
-        let baseFontSize = rect.height * config.fontSizeRatio
+        let isChinese = text.range(of: "\\p{Han}", options: .regularExpression) != nil
+        let fontSizeRatio: CGFloat = isChinese ? 0.65 : 0.75
+        let baseFontSize = rect.height * fontSizeRatio
         let maxLineWidth = rect.width - config.padding * 2
 
         let lines = wrapText(text, into: maxLineWidth, baseFontSize: baseFontSize, rect: rect)
         let totalHeight = lines.reduce(0) { $0 + $1.size.height }
         var currentY = rect.minY + (rect.height - totalHeight) / 2
 
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.alignment = .center
+        let srgbColor = config.textColor.usingColorSpace(.sRGB) ?? NSColor.black
 
         for line in lines {
-            let attributedString = NSAttributedString(
-                string: line.text,
-                attributes: [
-                    .font: NSFont.systemFont(ofSize: line.fontSize),
-                    .foregroundColor: config.textColor,
-                    .paragraphStyle: paragraphStyle
-                ]
-            )
+            let font = NSFont(name: "SFPro-Regular", size: line.fontSize) ?? NSFont.systemFont(ofSize: line.fontSize)
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: font,
+                .foregroundColor: srgbColor
+            ]
+            let attrString = NSAttributedString(string: line.text, attributes: attributes)
+            let textSize = attrString.size()
 
-            let textSize = attributedString.size()
-            let drawRect = CGRect(
-                x: rect.minX + config.padding + (maxLineWidth - textSize.width) / 2,
-                y: currentY + (line.size.height - textSize.height) / 2,
-                width: textSize.width,
-                height: textSize.height
-            )
+            let drawX = rect.minX + config.padding
+            let textOffsetY = (line.size.height - textSize.height) / 2
 
-            context.saveGState()
-            context.translateBy(x: 0, y: rect.maxY)
-            context.scaleBy(x: 1, y: -1)
-            attributedString.draw(with: drawRect, options: [], context: nil)
-            context.restoreGState()
+            // 创建临时位图渲染文字
+            let w = Int(ceil(textSize.width))
+            let h = Int(ceil(textSize.height))
+            guard w > 0, h > 0 else {
+                currentY += line.size.height
+                continue
+            }
+
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            guard let textCtx = CGContext(
+                data: nil, width: w, height: h,
+                bitsPerComponent: 8, bytesPerRow: w * 4,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ) else {
+                currentY += line.size.height
+                continue
+            }
+
+            // 在临时 context 中用 NSGraphicsContext 绘制
+            NSGraphicsContext.saveGraphicsState()
+            let nsCtx = NSGraphicsContext(cgContext: textCtx, flipped: true)
+            NSGraphicsContext.current = nsCtx
+            attrString.draw(at: CGPoint(x: 0, y: 0))
+            NSGraphicsContext.restoreGraphicsState()
+
+            if let textImage = textCtx.makeImage() {
+                // 主 context 已翻转到左上角原点，直接用 paddedRect 坐标
+                let destRect = CGRect(x: drawX, y: currentY + textOffsetY, width: textSize.width, height: textSize.height)
+                context.draw(textImage, in: destRect)
+            }
 
             currentY += line.size.height
         }

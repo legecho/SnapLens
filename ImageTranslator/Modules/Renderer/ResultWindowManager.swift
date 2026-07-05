@@ -6,17 +6,22 @@ final class ResultWindowManager: @unchecked Sendable {
 
     private var resultWindow: NSWindow?
     private var currentImage: NSImage?
+    private var originalImage: NSImage?
+    private var translatedImage: NSImage?
 
     private init() {}
 
     func show(image: NSImage, near screenRect: CGRect? = nil) {
         currentImage = image
+        originalImage = image
+        translatedImage = nil
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
 
             if let existing = self.resultWindow {
                 existing.contentView = NSHostingView(rootView: ScreenshotView(
                     image: image,
+                    isTranslating: true,
                     onCopy: { self.copyToClipboard() },
                     onClose: { self.close() }
                 ))
@@ -37,6 +42,7 @@ final class ResultWindowManager: @unchecked Sendable {
             )
             window.contentView = NSHostingView(rootView: ScreenshotView(
                 image: image,
+                isTranslating: true,
                 onCopy: { self.copyToClipboard() },
                 onClose: { self.close() }
             ))
@@ -47,7 +53,6 @@ final class ResultWindowManager: @unchecked Sendable {
 
             if let rect = screenRect {
                 let screenFrame = NSScreen.main?.frame ?? .zero
-                // 截图窗口直接覆盖在选区位置
                 let windowX = rect.origin.x
                 let windowY = screenFrame.height - rect.origin.y - windowHeight
                 window.setFrameOrigin(NSPoint(x: windowX, y: max(0, windowY)))
@@ -61,11 +66,27 @@ final class ResultWindowManager: @unchecked Sendable {
         }
     }
 
+    func updateImage(_ image: NSImage) {
+        translatedImage = image
+        currentImage = image
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let window = self.resultWindow else { return }
+            window.contentView = NSHostingView(rootView: ScreenshotView(
+                image: image,
+                isTranslating: false,
+                onCopy: { self.copyToClipboard() },
+                onClose: { self.close() }
+            ))
+        }
+    }
+
     func close() {
         DispatchQueue.main.async { [weak self] in
             self?.resultWindow?.orderOut(nil)
             self?.resultWindow = nil
             self?.currentImage = nil
+            self?.originalImage = nil
+            self?.translatedImage = nil
         }
     }
 
@@ -77,10 +98,11 @@ final class ResultWindowManager: @unchecked Sendable {
     }
 }
 
-// MARK: - Combined Screenshot + Toolbar View
+// MARK: - Screenshot + Toolbar View
 
 private struct ScreenshotView: View {
     let image: NSImage
+    var isTranslating: Bool = false
     let onCopy: () -> Void
     let onClose: () -> Void
 
@@ -89,6 +111,21 @@ private struct ScreenshotView: View {
             // 截图内容
             Image(nsImage: image)
                 .frame(width: image.size.width, height: image.size.height)
+                .overlay(alignment: .bottomTrailing) {
+                    if isTranslating {
+                        HStack(spacing: 4) {
+                            ProgressView()
+                                .scaleEffect(0.6)
+                            Text("Translating...")
+                                .font(.system(size: 11))
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Capsule())
+                        .padding(8)
+                    }
+                }
 
             // 底部工具栏
             HStack(spacing: 12) {

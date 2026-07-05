@@ -22,7 +22,17 @@ final class ScreenCaptureManager: @unchecked Sendable {
     private var captureCompletion: ((Result<CaptureResult, CaptureError>) -> Void)?
     private init() {}
 
+    private var isCapturing = false
+
     func startCapture(completion: @escaping (Result<CaptureResult, CaptureError>) -> Void) {
+        guard !isCapturing else {
+            DispatchQueue.main.async {
+                completion(.failure(.captureFailed))
+            }
+            return
+        }
+        isCapturing = true
+
         checkPermission { [weak self] granted in
             guard granted else {
                 DispatchQueue.main.async {
@@ -56,6 +66,7 @@ final class ScreenCaptureManager: @unchecked Sendable {
                 self?.captureRegion(rect, screenFrame: screenFrame)
             },
             onCancel: { [weak self] in
+                self?.isCapturing = false
                 self?.cleanup()
                 self?.captureCompletion?(.failure(.invalidRegion))
             }
@@ -81,7 +92,6 @@ final class ScreenCaptureManager: @unchecked Sendable {
     }
 
     private func captureRegion(_ rect: CGRect, screenFrame: CGRect) {
-        print("[DEBUG] captureRegion rect: \(rect), screenFrame: \(screenFrame)")
         // 先隐藏覆盖层，但不清除 captureCompletion
         DispatchQueue.main.async {
             self.overlayWindow?.orderOut(nil)
@@ -102,7 +112,6 @@ final class ScreenCaptureManager: @unchecked Sendable {
                 let scale = Int(NSScreen.main?.backingScaleFactor ?? 2.0)
                 let pixelW = nativeW * scale
                 let pixelH = nativeH * scale
-                print("[DEBUG] display logical: \(nativeW)x\(nativeH), scale: \(scale), pixel: \(pixelW)x\(pixelH)")
 
                 let filter = SCContentFilter(display: display, excludingWindows: [])
                 let config = SCStreamConfiguration()
@@ -114,12 +123,10 @@ final class ScreenCaptureManager: @unchecked Sendable {
                     contentFilter: filter,
                     configuration: config
                 )
-                print("[DEBUG] captured: \(fullImage.width)x\(fullImage.height)")
 
                 // 用原生像素尺寸做缩放，确保 scaleX == scaleY
                 let scaleX = CGFloat(fullImage.width) / screenFrame.width
                 let scaleY = CGFloat(fullImage.height) / screenFrame.height
-                print("[DEBUG] scale: \(scaleX)x\(scaleY)")
 
                 let cropRect = CGRect(
                     x: rect.origin.x * scaleX,
@@ -127,20 +134,20 @@ final class ScreenCaptureManager: @unchecked Sendable {
                     width: rect.width * scaleX,
                     height: rect.height * scaleY
                 )
-                print("[DEBUG] cropRect: \(cropRect)")
 
                 guard let cropped = fullImage.cropping(to: cropRect) else {
+                    self.isCapturing = false
                     captureCompletion?(.failure(.captureFailed))
                     return
                 }
 
-                print("[DEBUG] cropped: \(cropped.width)x\(cropped.height)")
                 let captureResult = CaptureResult(image: cropped, screenRect: rect)
+                self.isCapturing = false
                 captureCompletion?(.success(captureResult))
                 captureCompletion = nil
 
             } catch {
-                print("[DEBUG] capture error: \(error)")
+                self.isCapturing = false
                 captureCompletion?(.failure(.captureFailed))
                 captureCompletion = nil
             }

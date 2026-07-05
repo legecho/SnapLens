@@ -16,7 +16,6 @@ final class VisionOCR: OCRProvider {
     }
 
     func recognize(image: CGImage) async throws -> [TextBlock] {
-        print("[DEBUG] OCR input: \(image.width)x\(image.height), alphaInfo: \(image.alphaInfo.rawValue), bitsPerPixel: \(image.bitsPerPixel)")
         
         // Save image for debugging
         let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("ocr_debug_\(Int(Date().timeIntervalSince1970)).png")
@@ -25,7 +24,6 @@ final class VisionOCR: OCRProvider {
            let bitmap = NSBitmapImageRep(data: tiffData),
            let pngData = bitmap.representation(using: .png, properties: [:]) {
             try? pngData.write(to: tempURL)
-            print("[DEBUG] OCR debug image saved to: \(tempURL.path)")
         }
         
         let request = VNRecognizeTextRequest()
@@ -39,16 +37,13 @@ final class VisionOCR: OCRProvider {
         do {
             try handler.perform([request])
         } catch {
-            print("[DEBUG] OCR perform error: \(error)")
             throw OCRError.recognitionFailed
         }
 
         guard let observations = request.results else {
-            print("[DEBUG] OCR no results")
             throw OCRError.noTextFound
         }
         
-        print("[DEBUG] OCR found \(observations.count) observations")
 
         let imageHeight = CGFloat(image.height)
         let imageWidth = CGFloat(image.width)
@@ -65,7 +60,6 @@ final class VisionOCR: OCRProvider {
                 height: boundingBox.height * imageHeight
             )
 
-            print("[DEBUG] OCR text: '\(candidate.string)' confidence: \(candidate.confidence)")
             
             let block = TextBlock(
                 text: candidate.string,
@@ -76,7 +70,6 @@ final class VisionOCR: OCRProvider {
         }
 
         if textBlocks.isEmpty {
-            print("[DEBUG] OCR no text blocks after filtering")
             throw OCRError.noTextFound
         }
 

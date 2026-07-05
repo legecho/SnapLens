@@ -6,16 +6,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var popover: NSPopover!
     private var settingsWindow: NSWindow?
 
+    private let ocrProvider = VisionOCR()
+    private let renderer = TranslationRenderer()
+    private let configManager = ConfigManager.shared
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
         setupPopover()
 
-        // 注册快捷键
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             HotKeyManager.shared.register()
         }
 
-        // 监听快捷键通知
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleHotKey),
@@ -28,25 +30,83 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         HotKeyManager.shared.unregister()
     }
 
+    private var isCapturing = false
+
     @objc private func handleHotKey() {
-        ScreenCaptureManager.shared.startCapture { result in
+        guard !isCapturing else { return }
+        isCapturing = true
+        ScreenCaptureManager.shared.startCapture { [weak self] result in
+            guard let self = self else { return }
             switch result {
             case .success(let captureResult):
                 let cgImage = captureResult.image
                 let logicalSize = NSSize(width: captureResult.screenRect.width, height: captureResult.screenRect.height)
                 let nsImg = NSImage(cgImage: cgImage, size: logicalSize)
                 DispatchQueue.main.async {
+                    self.isCapturing = false
                     ResultWindowManager.shared.show(image: nsImg, near: captureResult.screenRect)
                 }
-            case .failure(let error):
-                print("[DEBUG] hotkey capture failed: \(error)")
+                Task {
+                    await self.processTranslation(cgImage, screenRect: captureResult.screenRect)
+                }
+            case .failure:
+                DispatchQueue.main.async {
+                    self.isCapturing = false
+                }
             }
         }
     }
 
+    private func processTranslation(_ image: CGImage, screenRect: CGRect?) async {
+        do {
+            let textBlocks = try await ocrProvider.recognize(image: image)
+            let texts = textBlocks.map { $0.text }
+            guard !texts.isEmpty else { return }
+
+            let translator = configManager.getTranslator()
+            let translations: [String]
+            do {
+                translations = try await translator.translateBatch(
+                    texts,
+                    from: configManager.sourceLanguage,
+                    to: configManager.targetLanguage
+                )
+            } catch {
+                translations = try await fallbackTranslate(texts: texts, from: configManager.sourceLanguage, to: configManager.targetLanguage)
+            }
+
+            guard let rendered = renderer.render(originalImage: image, textBlocks: textBlocks, translations: translations) else { return }
+
+            let logicalSize = screenRect.map { NSSize(width: $0.width, height: $0.height) }
+                ?? NSSize(width: image.width, height: image.height)
+            let nsResult = NSImage(cgImage: rendered, size: logicalSize)
+            await MainActor.run {
+                ResultWindowManager.shared.updateImage(nsResult)
+            }
+        } catch {
+        }
+    }
+
+    private func fallbackTranslate(texts: [String], from sourceLang: String, to targetLang: String) async throws -> [String] {
+        let session = URLSession.shared
+        let combinedText = texts.joined(separator: "\n")
+        let escaped = combinedText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? combinedText
+        let urlString = "https://api.mymemory.translated.net/get?q=\(escaped)&langpair=\(sourceLang)|\(targetLang)"
+        guard let url = URL(string: urlString) else { return texts }
+        let (data, _) = try await session.data(from: url)
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let responseData = json["responseData"] as? [String: Any],
+           let translatedText = responseData["translatedText"] as? String {
+            let decoded = translatedText.removingPercentEncoding ?? translatedText
+            return decoded.components(separatedBy: "\n")
+        }
+        return texts
+    }
+
+    // MARK: - Status Bar & Popover
+
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-
         if let button = statusItem.button {
             if let sfSymbol = NSImage(systemSymbolName: "translate", accessibilityDescription: "ImageTranslator") {
                 button.image = sfSymbol
@@ -86,7 +146,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             NSApp.activate(ignoringOtherApps: true)
             return
         }
-
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 450, height: 360),
             styleMask: [.titled, .closable],

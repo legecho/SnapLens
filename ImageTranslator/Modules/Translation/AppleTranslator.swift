@@ -18,7 +18,6 @@ final class AppleTranslator: TranslationProvider {
             let response = try await session.translate(text)
             return response.targetText
         } catch {
-            print("[DEBUG] AppleTranslation error: \(error)")
             throw TranslationError.engineNotAvailable(
                 "Apple Translation failed: \(error.localizedDescription). "
                 + "Please ensure language packs are installed in System Settings > General > Language & Region."
@@ -30,7 +29,7 @@ final class AppleTranslator: TranslationProvider {
         switch code {
         case "zh-CN": return "zh-Hans"
         case "zh-TW": return "zh-Hant"
-        case "en": return "en-US"
+        case "en": return "en-GB"
         case "ja": return "ja"
         case "ko": return "ko"
         case "es": return "es"

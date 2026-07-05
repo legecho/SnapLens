@@ -74,7 +74,6 @@ final class ConfigManager: ObservableObject {
         do {
             return try TranslatorFactory.create(engine: translationEngine, apiKey: googleAPIKey)
         } catch {
-            print("[DEBUG] TranslatorFactory error: \(error), falling back to MockTranslator")
             return MockTranslator()
         }
     }
